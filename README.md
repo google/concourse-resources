@@ -1,10 +1,11 @@
-# Gerrit Resource for Concourse
+# [Gerrit](https://www.gerritcodereview.com/) Resource for [Concourse](https://concourse.ci/)
 
 Tracks Gerrit change revisions (patch sets).
 
 ## Usage
 
-Define a new resource type for your pipeline:
+Define a new [resource type](https://concourse.ci/configuring-resource-types.html)
+for your pipeline:
 
 ``` yaml
 resource_types:
@@ -20,7 +21,8 @@ resource_types:
 
 * `query`: A Gerrit Search query matching desired changes. Defaults to
   `status:open`. You may want to specify a project like:
-  `status:open project:my-project`.
+  `status:open project:my-project`. See Gerrit documentation on
+  [Searching Changes](https://gerrit-documentation.storage.googleapis.com/Documentation/2.14.2/user-search.html).
 
 * `cookies`: A string containing cookies in "Netscape cookie file format" (as
   supported by libcurl) to be used when connecting to Gerrit. Usually used for
@@ -43,8 +45,7 @@ The repository is cloned and the given revision is checked out.
 * `fetch_protocol`: A protocol name used to resolve a fetch URL for the given
   revision. For more information see the `fetch` field in the
   [Gerrit REST API documenation](https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-info).
-  Defaults to `http` if `cookies` is specified in the source, otherwise
-  `anonymous http`.
+  Defaults to `http` or `anonymous http` if available.
 
 * `fetch_url`: A URL to the Gerrit git repository where the given revision can
   be found. Overrides `fetch_protocol`.
@@ -66,7 +67,7 @@ The given revision is updated with the given message and/or label(s).
   `message_file` fails and `message` is not specified then the `put` will fail.
 
 * `labels`: A map of label names to integers to set on the given revision, e.g.:
-  `{"Verified": 1}`.
+  `{Verified: 1}`.
 
 ## Example Pipeline
 
