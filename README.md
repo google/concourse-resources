@@ -2,6 +2,18 @@
 
 Tracks Gerrit change revisions (patch sets).
 
+## Usage
+
+Define a new resource type for your pipeline:
+
+``` yaml
+resource_types:
+- name: gerrit
+  type: docker-image
+  source:
+    repository: us.gcr.io/concourse-gerrit/resource
+```
+
 ## Source Configuration
 
 * `url`: *Required.* The base URL of the Gerrit REST API.
@@ -69,18 +81,22 @@ resources:
 - name: example-gerrit
   type: gerrit
   source:
-    url: https://gerrit.example.com
+    url: https://review.example.com
     query: status:open project:example
     cookies: ((gerrit-cookies))
 
 jobs:
 - name: example-ci
   plan:
+  # Trigger this job for every new patch set
   - get: example-gerrit
     version: every
     trigger: true
+
   - task: example-ci
     file: example-gerrit/ci.yml
+
+  # After a successfuly build, mark the patch set Verified +1
   - put: example-gerrit
     message: CI passed!
     labels: {Verified: 1}
