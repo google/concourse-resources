@@ -44,6 +44,7 @@ func outMain(reqDecoder *json.Decoder, buildDir string) ResourceResponse {
 	authMan := newAuthManager(req.Source)
 	defer authMan.cleanup()
 
+	// Read gerrit_version.json
 	var ver Version
 	if req.Params.Repository == "" {
 		log.Fatalln("param repository required")
@@ -53,6 +54,7 @@ func outMain(reqDecoder *json.Decoder, buildDir string) ResourceResponse {
 	err = ver.ReadFromFile(gerritVersionPath)
 	fatalErr(err, "error reading %q", gerritVersionPath)
 
+	// Build comment message
 	message := req.Params.Message
 
 	if messageFile := req.Params.MessageFile; messageFile != "" {
@@ -69,6 +71,7 @@ func outMain(reqDecoder *json.Decoder, buildDir string) ResourceResponse {
 		}
 	}
 
+	// Send review
 	c, err := gerritClient(req.Source, authMan)
 	fatalErr(err, "error setting up gerrit client")
 

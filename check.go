@@ -55,6 +55,7 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 
 	ctx := context.Background()
 
+	// Setup Gerrit query
 	query := req.Source.Query
 	if query == "" {
 		query = defaultQuery
@@ -79,7 +80,7 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 		// Check version requested; fetch changes updated since version was created.
 		afterTime = req.Version.Created
 
-		// As an optimization, try to read the last change update timestamp from disk
+		// As an optimization, try to read the latest change update timestamp from disk
 		// and use that to filter instead.
 		lastUpdate = readUpdatedStamp(req)
 		if !lastUpdate.IsZero() {
@@ -97,6 +98,7 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 	changes, err := c.QueryChanges(ctx, query, queryOpt)
 	fatalErr(err, "error querying for changes")
 
+	// Write latest change update timestamp to disk
 	if len(changes) > 0 {
 		lastChange := changes[len(changes)-1]
 		if lastChange.Updated.Time().After(lastUpdate) {
@@ -105,6 +107,7 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 		writeUpdatedStamp(req, lastUpdate)
 	}
 
+	// Translate Gerrit changes into Versions
 	versions := VersionList{}
 	for _, change := range changes {
 		for revision, revisionInfo := range change.Revisions {

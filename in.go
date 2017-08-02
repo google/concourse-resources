@@ -34,7 +34,9 @@ const (
 
 var (
 	defaultFetchProtocols = []string{"http", "anonymous http"}
-	execGit               = realExecGit // For testing
+
+	// For testing
+	execGit               = realExecGit
 )
 
 type inRequest struct {
@@ -61,6 +63,7 @@ func inMain(reqDecoder *json.Decoder, destDir string) ResourceResponse {
 
 	ctx := context.Background()
 
+	// Fetch requested version from Gerrit
 	change, rev, err := getVersionChangeRevision(c, ctx, req.Version)
 	fatalErr(err, "")
 
@@ -68,6 +71,7 @@ func inMain(reqDecoder *json.Decoder, destDir string) ResourceResponse {
 		req.Params, rev)
 	fatalErr(err, "could not resolve fetch args for change %q", change.ID)
 
+	// Prepare destination repo and checkout requested revision
 	gitFatalErr(destDir, "init")
 	gitFatalErr(destDir, "config", "color.ui", "always")
 
@@ -78,6 +82,7 @@ func inMain(reqDecoder *json.Decoder, destDir string) ResourceResponse {
 	gitFatalErr(destDir, fetchArgs...)
 	gitFatalErr(destDir, "checkout", "FETCH_HEAD")
 
+	// Build response metadata
 	metadata := make(metadataMap)
 	metadata["project"] = change.Project
 	metadata["subject"] = change.Subject
@@ -91,6 +96,7 @@ func inMain(reqDecoder *json.Decoder, destDir string) ResourceResponse {
 		log.Printf("error building revision link: %v", err)
 	}
 
+	// Write gerrit_version.json
 	gerritVersionPath := filepath.Join(destDir, gerritVersionFilename)
 	err = req.Version.WriteToFile(gerritVersionPath)
 	fatalErr(err, "error writing %q", gerritVersionPath)
