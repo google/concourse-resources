@@ -3,4 +3,4 @@
 	url = https://github.com/stretchr/testify
 [submodule "vendor/golang.org/x/build"]
 	path = vendor/golang.org/x/build
-	url = https://golang.org/x/build
+	url = https://github.com/golang/build

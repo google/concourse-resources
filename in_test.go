@@ -66,7 +66,7 @@ func mockGitWithArg(arg string, f func(args []string, idx int)) {
 
 func TestInResponse(t *testing.T) {
 	resp := testIn(Source{}, testInVersion, inParams{})
-	assert.Equal(t, testInVersion, resp.Version)
+	assert.True(t, testInVersion.Equal(resp.Version), "%v != %v", testInVersion, resp.Version)
 	assert.Equal(t, "testproject", resp.Metadata["project"])
 	assert.Equal(t, "Test Subject", resp.Metadata["subject"])
 	assert.Equal(t, "Testy McTestface <testy@example.com>", resp.Metadata["uploader"])
@@ -149,5 +149,5 @@ func TestInGerritVersionFile(t *testing.T) {
 	var ver Version
 	versionPath := filepath.Join(testInDestDir, gerritVersionFilename)
 	assert.NoError(t, ver.ReadFromFile(versionPath))
-	assert.Equal(t, testInVersion, ver)
+	assert.True(t, testInVersion.Equal(ver), "%v != %v", testInVersion, ver)
 }

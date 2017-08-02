@@ -35,15 +35,20 @@ type Source struct {
 	Cookies string `json:"cookies"`
 }
 
-
 type Version struct {
 	ChangeId string    `json:"change_id"`
 	Revision string    `json:"revision"`
 	Created  time.Time `json:"created"`
 }
 
+func (v Version) Equal(o Version) bool {
+	return v.ChangeId == o.ChangeId &&
+		v.Revision == o.Revision &&
+		v.Created.Equal(o.Created)
+}
+
 func (v Version) WriteToFile(path string) error {
-	f, err := os.OpenFile(path, os.O_CREATE | os.O_EXCL | os.O_WRONLY, 0644)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -60,7 +65,6 @@ func (v *Version) ReadFromFile(path string) error {
 	return json.NewDecoder(f).Decode(v)
 }
 
-
 type VersionList []Version
 
 func (vl VersionList) Len() int {
@@ -74,7 +78,6 @@ func (vl VersionList) Less(i, j int) bool {
 func (vl VersionList) Swap(i, j int) {
 	vl[i], vl[j] = vl[j], vl[i]
 }
-
 
 type ResourceResponse struct {
 	Version  `json:"version"`

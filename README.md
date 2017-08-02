@@ -1,5 +1,7 @@
 # [Gerrit](https://www.gerritcodereview.com/) Resource for [Concourse](https://concourse.ci/)
 
+[![Build Status](https://travis-ci.org/google/concourse-gerrit.svg?branch=master)](https://travis-ci.org/google/concourse-gerrit)
+
 Tracks Gerrit change revisions (patch sets).
 
 ## Usage
