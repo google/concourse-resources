@@ -25,8 +25,8 @@ import (
 )
 
 type outRequest struct {
-	Source  `json:"source"`
-	Params  outParams `json:"params"`
+	Source `json:"source"`
+	Params outParams `json:"params"`
 }
 
 type outParams struct {

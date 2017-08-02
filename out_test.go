@@ -44,8 +44,8 @@ func testOut(src Source, ver Version, params outParams) ResourceResponse {
 	params.Repository = filepath.Base(repoDir)
 
 	return outMain(testJsonReader(outRequest{
-		Source:  src,
-		Params:  params,
+		Source: src,
+		Params: params,
 	}), testTempDir)
 }
 

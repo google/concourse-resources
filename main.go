@@ -51,10 +51,10 @@ func main() {
 }
 
 func assertArgsLen(expected int) {
-	if len(os.Args) - 1 != expected {
+	if len(os.Args)-1 != expected {
 		log.Fatalf(
 			"%s takes exactly %d args; got %d",
-			os.Args[0], expected, len(os.Args) - 1)
+			os.Args[0], expected, len(os.Args)-1)
 	}
 }
 

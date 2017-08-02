@@ -27,7 +27,7 @@ var (
 )
 
 type authManager struct {
-	cookies string
+	cookies      string
 	cookiesPath_ string
 }
 
@@ -89,5 +89,3 @@ func (r *authManager) cleanup() {
 		r.cookiesPath_ = ""
 	}
 }
-
-

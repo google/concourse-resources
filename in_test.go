@@ -29,7 +29,7 @@ var (
 	testInVersion = Version{
 		ChangeId: "Itestchange1",
 		Revision: "deadbeef0",
-		Created: time.Unix(12345, 0),
+		Created:  time.Unix(12345, 0),
 	}
 
 	testInDestDir string
@@ -47,7 +47,7 @@ func testIn(src Source, ver Version, params inParams) ResourceResponse {
 	return inMain(testJsonReader(inRequest{
 		Source:  src,
 		Version: ver,
-		Params: params,
+		Params:  params,
 	}), testInDestDir)
 }
 

@@ -33,13 +33,13 @@ import (
 )
 
 const (
-	testProject = "testproject"
-	testBranch = "testbranch"
-	testSubject = "Test Subject"
+	testProject        = "testproject"
+	testBranch         = "testbranch"
+	testSubject        = "Test Subject"
 	testChangeIdPrefix = "Itestchange"
 	testRevisionPrefix = "deadbeef"
-	testName = "Testy McTestface"
-	testEmail = "testy@example.com"
+	testName           = "Testy McTestface"
+	testEmail          = "testy@example.com"
 )
 
 var (
@@ -48,12 +48,12 @@ var (
 	testGerritUrl string
 
 	testGerritLastAuthenticated bool
-	testGerritLastRequest *http.Request
-	testGerritLastQ string
-	testGerritLastN int
-	testGerritLastChangeId string
-	testGerritLastRevision string
-	testGerritLastReviewInput *gerrit.ReviewInput
+	testGerritLastRequest       *http.Request
+	testGerritLastQ             string
+	testGerritLastN             int
+	testGerritLastChangeId      string
+	testGerritLastRevision      string
+	testGerritLastReviewInput   *gerrit.ReviewInput
 )
 
 func TestMain(m *testing.M) {
@@ -92,24 +92,24 @@ func testExecGit(_ ...string) ([]byte, error) {
 func testBuildChange(testNumber int, revisionCount int) gerrit.ChangeInfo {
 	changeId := fmt.Sprintf("%s%d", testChangeIdPrefix, testNumber)
 	change := gerrit.ChangeInfo{
-		ID: fmt.Sprintf("%s~%s~%s", testProject, testBranch, changeId),
+		ID:           fmt.Sprintf("%s~%s~%s", testProject, testBranch, changeId),
 		ChangeNumber: testNumber,
-		Project: testProject,
-		Branch: testBranch,
-		ChangeID: changeId,
-		Subject: testSubject,
-		Revisions: make(map[string]gerrit.RevisionInfo),
+		Project:      testProject,
+		Branch:       testBranch,
+		ChangeID:     changeId,
+		Subject:      testSubject,
+		Revisions:    make(map[string]gerrit.RevisionInfo),
 	}
 	for i := 0; i < revisionCount; i++ {
 		revision := fmt.Sprintf("%s%d", testRevisionPrefix, i)
 		patchSetNumber := i + 1
-		created := gerrit.TimeStamp(time.Unix(int64(100*testNumber + 10000*i), 0))
+		created := gerrit.TimeStamp(time.Unix(int64(100*testNumber+10000*i), 0))
 		ref := fmt.Sprintf("refs/changes/1/%d/%d", testNumber, i+1)
 		change.Revisions[revision] = gerrit.RevisionInfo{
 			PatchSetNumber: patchSetNumber,
-			Created: created,
+			Created:        created,
 			Uploader: &gerrit.AccountInfo{
-				Name: testName,
+				Name:  testName,
 				Email: testEmail,
 			},
 			Ref: ref,
@@ -164,7 +164,7 @@ func testGerritHandler(w http.ResponseWriter, r *http.Request) {
 	if path == "/changes/" {
 		testGerritLastQ = r.URL.Query().Get("q")
 		testGerritLastN, _ = strconv.Atoi(r.URL.Query().Get("n"))
-	
+
 		if testGerritLastQ == "" {
 			panic("no q param for /changes/")
 		}

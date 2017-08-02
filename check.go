@@ -120,7 +120,7 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 				versions = append(versions, Version{
 					ChangeId: change.ID,
 					Revision: revision,
-					Created: created,
+					Created:  created,
 				})
 			}
 		}
