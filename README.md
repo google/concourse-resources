@@ -4,6 +4,8 @@
 
 Tracks Gerrit change revisions (patch sets).
 
+*This is not an official Google product.*
+
 ## Usage
 
 Define a new [resource type](https://concourse.ci/configuring-resource-types.html)
