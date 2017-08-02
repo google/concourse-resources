@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -93,6 +94,20 @@ func inMain(reqDecoder *json.Decoder, destDir string) ResourceResponse {
 	gerritVersionPath := filepath.Join(destDir, gerritVersionFilename)
 	err = req.Version.WriteToFile(gerritVersionPath)
 	fatalErr(err, "error writing %q", gerritVersionPath)
+
+	// Ignore gerrit_version.json file in repo
+	excludePath := filepath.Join(destDir, ".git", "info", "exclude")
+	err = os.MkdirAll(filepath.Dir(excludePath), 0755)
+	if err == nil {
+		f, err := os.OpenFile(excludePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		if err == nil {
+			defer f.Close()
+			_, err = fmt.Fprintf(f, "\n/%s\n", gerritVersionFilename)
+		}
+	}
+	if err != nil {
+		log.Printf("error adding %q to %q: %v", gerritVersionPath, excludePath, err)
+	}
 
 	return ResourceResponse{Version: req.Version, Metadata: metadata}
 }
