@@ -1,6 +1,6 @@
 [submodule "vendor/github.com/stretchr/testify"]
-	path = vendor/github.com/stretchr/testify
+	path = gerrit/vendor/github.com/stretchr/testify
 	url = https://github.com/stretchr/testify
 [submodule "vendor/golang.org/x/build"]
-	path = vendor/golang.org/x/build
+	path = gerrit/vendor/golang.org/x/build
 	url = https://github.com/golang/build

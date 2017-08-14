@@ -3,4 +3,8 @@ language: go
 go:
   - 1.8
 
-script: make test
+install: true
+
+script:
+  - cd gerrit
+  - make test
