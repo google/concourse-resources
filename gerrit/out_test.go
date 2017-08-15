@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/google/concourse-resources/internal"
 )
 
 var (
@@ -29,7 +31,7 @@ var (
 	}
 )
 
-func testOut(src Source, ver Version, params outParams) ResourceResponse {
+func testOut(src Source, params outParams) Version {
 	src.Url = testGerritUrl
 
 	repoDir, err := ioutil.TempDir(testTempDir, "repo")
@@ -37,26 +39,24 @@ func testOut(src Source, ver Version, params outParams) ResourceResponse {
 		panic(err)
 	}
 
-	err = ver.WriteToFile(filepath.Join(repoDir, gerritVersionFilename))
+	err = testOutVersion.WriteToFile(filepath.Join(repoDir, gerritVersionFilename))
 	if err != nil {
 		panic(err)
 	}
 	params.Repository = filepath.Base(repoDir)
 
-	return outMain(testJsonReader(outRequest{
-		Source: src,
-		Params: params,
-	}), testTempDir)
+	rs := internal.ResourceContext{TargetDir: testTempDir}
+	return out(&rs, src, params)
 }
 
 func TestOutVersion(t *testing.T) {
-	testOut(Source{}, testOutVersion, outParams{})
+	testOut(Source{}, outParams{})
 	assert.Equal(t, "outChange", testGerritLastChangeId)
 	assert.Equal(t, "outRev", testGerritLastRevision)
 }
 
 func TestOutMessage(t *testing.T) {
-	testOut(Source{}, testOutVersion, outParams{Message: "foo bar"})
+	testOut(Source{}, outParams{Message: "foo bar"})
 	assert.Equal(t, "foo bar", testGerritLastReviewInput.Message)
 }
 
@@ -66,12 +66,12 @@ func TestOutMessageFile(t *testing.T) {
 		[]byte("file msg"), 0600)
 	assert.NoError(t, err)
 
-	testOut(Source{}, testOutVersion, outParams{MessageFile: "message.txt"})
+	testOut(Source{}, outParams{MessageFile: "message.txt"})
 	assert.Equal(t, "file msg", testGerritLastReviewInput.Message)
 }
 
 func TestOutLabels(t *testing.T) {
-	testOut(Source{}, testOutVersion, outParams{Labels: map[string]int{
+	testOut(Source{}, outParams{Labels: map[string]int{
 		"Code-Review": 1,
 		"Verified":    -1,
 	}})

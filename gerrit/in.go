@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -26,6 +25,8 @@ import (
 	"path/filepath"
 
 	"golang.org/x/build/gerrit"
+
+	"github.com/google/concourse-resources/internal"
 )
 
 const (
@@ -39,70 +40,62 @@ var (
 	execGit               = realExecGit
 )
 
-type inRequest struct {
-	Source  `json:"source"`
-	Version `json:"version"`
-	Params  inParams `json:"params"`
-}
-
 type inParams struct {
 	FetchProtocol string `json:"fetch_protocol"`
 	FetchUrl      string `json:"fetch_url"`
 }
 
-func inMain(reqDecoder *json.Decoder, destDir string) ResourceResponse {
-	var req inRequest
-	err := reqDecoder.Decode(&req)
-	fatalErr(err, "error reading request")
+func init() {
+	internal.RegisterInFunc(in)
+}
 
-	authMan := newAuthManager(req.Source)
+func in(rs *internal.ResourceContext, src Source, ver Version, params inParams) Version {
+	authMan := newAuthManager(src)
 	defer authMan.cleanup()
 
-	c, err := gerritClient(req.Source, authMan)
+	c, err := gerritClient(src, authMan)
 	fatalErr(err, "error setting up gerrit client")
 
 	ctx := context.Background()
 
 	// Fetch requested version from Gerrit
-	change, rev, err := getVersionChangeRevision(c, ctx, req.Version)
+	change, rev, err := getVersionChangeRevision(c, ctx, ver)
 	fatalErr(err, "")
 
-	fetchArgs, err := resolveFetchArgs(
-		req.Params, rev)
+	fetchArgs, err := resolveFetchArgs(params, rev)
 	fatalErr(err, "could not resolve fetch args for change %q", change.ID)
 
 	// Prepare destination repo and checkout requested revision
-	gitFatalErr(destDir, "init")
-	gitFatalErr(destDir, "config", "color.ui", "always")
+	gitFatalErr(rs.TargetDir, "init")
+	gitFatalErr(rs.TargetDir, "config", "color.ui", "always")
 
 	configArgs, err := authMan.gitConfigArgs()
 	fatalErr(err, "error getting git config args")
-	gitFatalErr(destDir, configArgs...)
+	gitFatalErr(rs.TargetDir, configArgs...)
 
-	gitFatalErr(destDir, fetchArgs...)
-	gitFatalErr(destDir, "checkout", "FETCH_HEAD")
+	gitFatalErr(rs.TargetDir, fetchArgs...)
+	gitFatalErr(rs.TargetDir, "checkout", "FETCH_HEAD")
 
 	// Build response metadata
-	metadata := make(metadataMap)
-	metadata["project"] = change.Project
-	metadata["subject"] = change.Subject
+	rs.AddMetadata("project", change.Project)
+	rs.AddMetadata("subject", change.Subject)
 	if rev.Uploader != nil {
-		metadata["uploader"] = fmt.Sprintf("%s <%s>", rev.Uploader.Name, rev.Uploader.Email)
+		rs.AddMetadata("uploader", fmt.Sprintf("%s <%s>", rev.Uploader.Name, rev.Uploader.Email))
 	}
-	link, err := buildRevisionLink(req.Source, change.ChangeNumber, rev.PatchSetNumber)
+	link, err := buildRevisionLink(src, change.ChangeNumber, rev.PatchSetNumber)
 	if err == nil {
-		metadata["link"] = link
+		rs.AddMetadata("link", link)
 	} else {
 		log.Printf("error building revision link: %v", err)
 	}
 
 	// Write gerrit_version.json
-	gerritVersionPath := filepath.Join(destDir, gerritVersionFilename)
-	err = req.Version.WriteToFile(gerritVersionPath)
+	gerritVersionPath := filepath.Join(rs.TargetDir, gerritVersionFilename)
+	err = ver.WriteToFile(gerritVersionPath)
 	fatalErr(err, "error writing %q", gerritVersionPath)
 
 	// Ignore gerrit_version.json file in repo
-	excludePath := filepath.Join(destDir, ".git", "info", "exclude")
+	excludePath := filepath.Join(rs.TargetDir, ".git", "info", "exclude")
 	err = os.MkdirAll(filepath.Dir(excludePath), 0755)
 	if err == nil {
 		f, err := os.OpenFile(excludePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -115,7 +108,7 @@ func inMain(reqDecoder *json.Decoder, destDir string) ResourceResponse {
 		log.Printf("error adding %q to %q: %v", gerritVersionPath, excludePath, err)
 	}
 
-	return ResourceResponse{Version: req.Version, Metadata: metadata}
+	return ver
 }
 
 func resolveFetchArgs(params inParams, rev *gerrit.RevisionInfo) ([]string, error) {

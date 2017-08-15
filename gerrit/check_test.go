@@ -24,10 +24,7 @@ import (
 
 func testCheck(src Source, ver Version) []Version {
 	src.Url = testGerritUrl
-	return checkMain(testJsonReader(checkRequest{
-		Source:  src,
-		Version: ver,
-	}))
+	return check(src, ver)
 }
 
 func TestCheckSourceQuery(t *testing.T) {

@@ -27,6 +27,8 @@ import (
 	"time"
 
 	"golang.org/x/build/gerrit"
+
+	"github.com/google/concourse-resources/internal"
 )
 
 const (
@@ -37,26 +39,21 @@ var (
 	updateStampTempDir = os.TempDir()
 )
 
-type checkRequest struct {
-	Source  `json:"source"`
-	Version `json:"version"`
+func init() {
+	internal.RegisterCheckFunc(check)
 }
 
-func checkMain(reqDecoder *json.Decoder) []Version {
-	var req checkRequest
-	err := reqDecoder.Decode(&req)
-	fatalErr(err, "error reading request")
-
-	authMan := newAuthManager(req.Source)
+func check(src Source, ver Version) []Version {
+	authMan := newAuthManager(src)
 	defer authMan.cleanup()
 
-	c, err := gerritClient(req.Source, authMan)
+	c, err := gerritClient(src, authMan)
 	fatalErr(err, "error setting up gerrit client")
 
 	ctx := context.Background()
 
 	// Setup Gerrit query
-	query := req.Source.Query
+	query := src.Query
 	if query == "" {
 		query = defaultQuery
 	}
@@ -70,7 +67,6 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 
 	var lastUpdate time.Time
 
-	ver := req.Version
 	if ver.ChangeId == "" {
 		// No version requested; fetch only the most recently updated change's
 		// current revision.
@@ -78,11 +74,11 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 		queryOpt.Fields = []string{"CURRENT_REVISION"}
 	} else {
 		// Check version requested; fetch changes updated since version was created.
-		afterTime = req.Version.Created
+		afterTime = ver.Created
 
 		// As an optimization, try to read the latest change update timestamp from disk
 		// and use that to filter instead.
-		lastUpdate = readUpdatedStamp(req)
+		lastUpdate = readUpdatedStamp(src, ver)
 		if !lastUpdate.IsZero() {
 			afterTime = lastUpdate
 		}
@@ -104,7 +100,7 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 		if lastChange.Updated.Time().After(lastUpdate) {
 			lastUpdate = lastChange.Updated.Time()
 		}
-		writeUpdatedStamp(req, lastUpdate)
+		writeUpdatedStamp(src, ver, lastUpdate)
 	}
 
 	// Translate Gerrit changes into Versions
@@ -141,17 +137,17 @@ func checkMain(reqDecoder *json.Decoder) []Version {
 	return versions
 }
 
-func updateStampFilename(req checkRequest) string {
+func updateStampFilename(src Source, ver Version) string {
 	hash := sha1.New()
-	fmt.Fprintf(hash, "%#v", req)
+	fmt.Fprintf(hash, "%#v|%#v", src, ver)
 	hashed := base32.StdEncoding.EncodeToString(hash.Sum([]byte{}))
 	return filepath.Join(
 		updateStampTempDir,
 		fmt.Sprintf("concourse-gerrit-%s.stamp", hashed))
 }
 
-func readUpdatedStamp(req checkRequest) (t time.Time) {
-	f, err := os.Open(updateStampFilename(req))
+func readUpdatedStamp(src Source, ver Version) (t time.Time) {
+	f, err := os.Open(updateStampFilename(src, ver))
 	if err != nil {
 		if !os.IsNotExist(err) {
 			log.Printf("error opening update stamp file: %s", err)
@@ -167,8 +163,8 @@ func readUpdatedStamp(req checkRequest) (t time.Time) {
 	return t
 }
 
-func writeUpdatedStamp(req checkRequest, updated time.Time) {
-	f, err := os.OpenFile(updateStampFilename(req), os.O_WRONLY|os.O_CREATE, 0600)
+func writeUpdatedStamp(src Source, ver Version, updated time.Time) {
+	f, err := os.OpenFile(updateStampFilename(src, ver), os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		log.Printf("error opening update stamp file: %s", err)
 		return

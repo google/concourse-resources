@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/google/concourse-resources/internal"
 )
 
 var (
@@ -35,7 +37,7 @@ var (
 	testInDestDir string
 )
 
-func testIn(src Source, ver Version, params inParams) ResourceResponse {
+func testIn(src Source, ver Version, params inParams) (Version, []internal.MetadataField) {
 	src.Url = testGerritUrl
 
 	var err error
@@ -44,11 +46,9 @@ func testIn(src Source, ver Version, params inParams) ResourceResponse {
 		panic(err)
 	}
 
-	return inMain(testJsonReader(inRequest{
-		Source:  src,
-		Version: ver,
-		Params:  params,
-	}), testInDestDir)
+	rc := internal.ResourceContext{TargetDir: testInDestDir}
+	respVer := in(&rc, src, ver, params)
+	return respVer, rc.Metadata
 }
 
 func mockGitWithArg(arg string, f func(args []string, idx int)) {
@@ -65,12 +65,12 @@ func mockGitWithArg(arg string, f func(args []string, idx int)) {
 }
 
 func TestInResponse(t *testing.T) {
-	resp := testIn(Source{}, testInVersion, inParams{})
-	assert.True(t, testInVersion.Equal(resp.Version), "%v != %v", testInVersion, resp.Version)
-	assert.Equal(t, "testproject", resp.Metadata["project"])
-	assert.Equal(t, "Test Subject", resp.Metadata["subject"])
-	assert.Equal(t, "Testy McTestface <testy@example.com>", resp.Metadata["uploader"])
-	assert.Equal(t, fmt.Sprintf("%s/c/1/1", testGerritUrl), resp.Metadata["link"])
+	ver, metadata := testIn(Source{}, testInVersion, inParams{})
+	assert.True(t, testInVersion.Equal(ver), "%v != %v", testInVersion, ver)
+	assert.Contains(t, metadata, internal.MetadataField{"project", "testproject"})
+	assert.Contains(t, metadata, internal.MetadataField{"subject", "Test Subject"})
+	assert.Contains(t, metadata, internal.MetadataField{"uploader", "Testy McTestface <testy@example.com>"})
+	assert.Contains(t, metadata, internal.MetadataField{"link", fmt.Sprintf("%s/c/1/1", testGerritUrl)})
 }
 
 func TestInGitInit(t *testing.T) {

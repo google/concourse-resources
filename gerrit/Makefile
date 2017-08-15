@@ -9,10 +9,10 @@ IMAGE_TAG=${IMAGE_NAME}:${BUILD}
 
 LDFLAGS=-ldflags "-X main.Build=${BUILD}"
 
+# Prevent dynamic linking errors in docker containers
 export CGO_ENABLED=0
 
 build: clean
-	git submodule update --init --recursive
 	go build ${LDFLAGS} -o build/${NAME}
 	ln -s ${NAME} build/check
 	ln -s ${NAME} build/in
@@ -30,7 +30,3 @@ image-push: image
 
 image-run: image
 	docker run -it ${IMAGE_TAG} /bin/bash
-
-test:
-	git submodule update --init --recursive
-	go test .

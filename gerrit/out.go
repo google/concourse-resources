@@ -16,18 +16,14 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"io/ioutil"
 	"log"
 	"path/filepath"
 
 	"golang.org/x/build/gerrit"
-)
 
-type outRequest struct {
-	Source `json:"source"`
-	Params outParams `json:"params"`
-}
+	"github.com/google/concourse-resources/internal"
+)
 
 type outParams struct {
 	Repository  string         `json:"repository"`
@@ -36,29 +32,29 @@ type outParams struct {
 	Labels      map[string]int `json:"labels"`
 }
 
-func outMain(reqDecoder *json.Decoder, buildDir string) ResourceResponse {
-	var req outRequest
-	err := reqDecoder.Decode(&req)
-	fatalErr(err, "error reading request")
+func init() {
+	internal.RegisterOutFunc(out)
+}
 
-	authMan := newAuthManager(req.Source)
+func out(rs *internal.ResourceContext, src Source, params outParams) Version {
+	authMan := newAuthManager(src)
 	defer authMan.cleanup()
 
 	// Read gerrit_version.json
 	var ver Version
-	if req.Params.Repository == "" {
+	if params.Repository == "" {
 		log.Fatalln("param repository required")
 	}
 	gerritVersionPath := filepath.Join(
-		buildDir, req.Params.Repository, gerritVersionFilename)
-	err = ver.ReadFromFile(gerritVersionPath)
+		rs.TargetDir, params.Repository, gerritVersionFilename)
+	err := ver.ReadFromFile(gerritVersionPath)
 	fatalErr(err, "error reading %q", gerritVersionPath)
 
 	// Build comment message
-	message := req.Params.Message
+	message := params.Message
 
-	if messageFile := req.Params.MessageFile; messageFile != "" {
-		message_bytes, err := ioutil.ReadFile(filepath.Join(buildDir, messageFile))
+	if messageFile := params.MessageFile; messageFile != "" {
+		message_bytes, err := ioutil.ReadFile(filepath.Join(rs.TargetDir, messageFile))
 		if err == nil {
 			message = string(message_bytes)
 		} else {
@@ -72,16 +68,16 @@ func outMain(reqDecoder *json.Decoder, buildDir string) ResourceResponse {
 	}
 
 	// Send review
-	c, err := gerritClient(req.Source, authMan)
+	c, err := gerritClient(src, authMan)
 	fatalErr(err, "error setting up gerrit client")
 
 	ctx := context.Background()
 
 	err = c.SetReview(ctx, ver.ChangeId, ver.Revision, gerrit.ReviewInput{
 		Message: message,
-		Labels:  req.Params.Labels,
+		Labels:  params.Labels,
 	})
 	fatalErr(err, "error sending review")
 
-	return ResourceResponse{Version: ver}
+	return ver
 }

@@ -3,8 +3,7 @@ language: go
 go:
   - 1.8
 
+# Skip install to make sure vendoring is working
 install: true
 
-script:
-  - cd gerrit
-  - make test
+script: go test -v ./internal ./gerrit
