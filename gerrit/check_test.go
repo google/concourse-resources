@@ -22,19 +22,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testCheck(src Source, ver Version) []Version {
+func testCheck(t *testing.T, src Source, ver Version) []Version {
 	src.Url = testGerritUrl
-	return check(src, ver)
+	versions, err := check(src, ver)
+	assert.NoError(t, err)
+	return versions
 }
 
 func TestCheckSourceQuery(t *testing.T) {
-	testCheck(Source{Query: "my query"}, Version{})
+	testCheck(t, Source{Query: "my query"}, Version{})
 	assert.Equal(t, "my query", testGerritLastQ)
 }
 
 func TestCheckSourceCookies(t *testing.T) {
 	cookies := "localhost\tFALSE\t/\tFALSE\t9999999999\tfoo\tbar\n"
-	testCheck(Source{Cookies: cookies}, Version{})
+	testCheck(t, Source{Cookies: cookies}, Version{})
 	assert.True(t, testGerritLastAuthenticated)
 	cookie, err := testGerritLastRequest.Cookie("foo")
 	assert.NoError(t, err)
@@ -42,7 +44,7 @@ func TestCheckSourceCookies(t *testing.T) {
 }
 
 func TestCheckWithoutVersion(t *testing.T) {
-	versions := testCheck(Source{}, Version{})
+	versions := testCheck(t, Source{}, Version{})
 	assert.Equal(t, "status:open", testGerritLastQ)
 	assert.Equal(t, 1, testGerritLastN)
 
@@ -53,7 +55,7 @@ func TestCheckWithoutVersion(t *testing.T) {
 }
 
 func TestCheckWithNewVersions(t *testing.T) {
-	versions := testCheck(Source{}, Version{
+	versions := testCheck(t, Source{}, Version{
 		ChangeId: "Itestchange1",
 		Revision: "deadbeef0",
 		Created:  time.Unix(1, 0),
@@ -65,7 +67,7 @@ func TestCheckWithNewVersions(t *testing.T) {
 }
 
 func TestCheckWithoutNewVersions(t *testing.T) {
-	versions := testCheck(Source{}, Version{
+	versions := testCheck(t, Source{}, Version{
 		ChangeId: "Itestchange1",
 		Revision: "deadbeef0",
 		Created:  time.Unix(50000, 0),
@@ -75,7 +77,7 @@ func TestCheckWithoutNewVersions(t *testing.T) {
 }
 
 func TestCheckVersionsSorted(t *testing.T) {
-	versions := testCheck(Source{}, Version{
+	versions := testCheck(t, Source{}, Version{
 		ChangeId: "Itestchange1",
 		Revision: "deadbeef0",
 		Created:  time.Unix(2, 0),
@@ -87,7 +89,7 @@ func TestCheckVersionsSorted(t *testing.T) {
 }
 
 func TestCheckWithBadRevision(t *testing.T) {
-	versions := testCheck(Source{}, Version{
+	versions := testCheck(t, Source{}, Version{
 		ChangeId: "Itestchange1",
 		Revision: "badrevision",
 	})
@@ -97,21 +99,21 @@ func TestCheckWithBadRevision(t *testing.T) {
 }
 
 func TestCheckTimestampCaching(t *testing.T) {
-	testCheck(Source{Query: "foo"}, Version{
+	testCheck(t, Source{Query: "foo"}, Version{
 		ChangeId: "Itestchange1",
 		Revision: "deadbeaf0",
 		Created:  time.Unix(100, 0),
 	})
 	assert.Equal(t, "(foo) AND after:{1970-01-01 00:01:40}", testGerritLastQ)
 
-	testCheck(Source{Query: "foo"}, Version{
+	testCheck(t, Source{Query: "foo"}, Version{
 		ChangeId: "Itestchange1",
 		Revision: "deadbeaf0",
 		Created:  time.Unix(100, 0),
 	})
 	assert.Equal(t, "(foo) AND after:{1970-01-01 05:35:00}", testGerritLastQ)
 
-	testCheck(Source{Query: "bar"}, Version{
+	testCheck(t, Source{Query: "bar"}, Version{
 		ChangeId: "Itestchange1",
 		Revision: "deadbeaf0",
 		Created:  time.Unix(100, 0),

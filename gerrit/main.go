@@ -28,15 +28,3 @@ func main() {
 	log.Printf("gerrit-resource build %s", Build)
 	internal.RunMain()
 }
-
-func fatalErr(err error, fmt string, args ...interface{}) {
-	if err != nil {
-		if fmt == "" {
-			fmt = "%v"
-		} else {
-			fmt += ": %v"
-		}
-		args = append(args, err)
-		log.Fatalf(fmt, args...)
-	}
-}

@@ -31,7 +31,7 @@ var (
 	}
 )
 
-func testOut(src Source, params outParams) Version {
+func testOut(t *testing.T, src Source, params outParams) Version {
 	src.Url = testGerritUrl
 
 	repoDir, err := ioutil.TempDir(testTempDir, "repo")
@@ -46,17 +46,19 @@ func testOut(src Source, params outParams) Version {
 	params.Repository = filepath.Base(repoDir)
 
 	rs := internal.ResourceContext{TargetDir: testTempDir}
-	return out(&rs, src, params)
+	ver, err := out(&rs, src, params)
+	assert.NoError(t, err)
+	return ver
 }
 
 func TestOutVersion(t *testing.T) {
-	testOut(Source{}, outParams{})
+	testOut(t, Source{}, outParams{})
 	assert.Equal(t, "outChange", testGerritLastChangeId)
 	assert.Equal(t, "outRev", testGerritLastRevision)
 }
 
 func TestOutMessage(t *testing.T) {
-	testOut(Source{}, outParams{Message: "foo bar"})
+	testOut(t, Source{}, outParams{Message: "foo bar"})
 	assert.Equal(t, "foo bar", testGerritLastReviewInput.Message)
 }
 
@@ -66,12 +68,12 @@ func TestOutMessageFile(t *testing.T) {
 		[]byte("file msg"), 0600)
 	assert.NoError(t, err)
 
-	testOut(Source{}, outParams{MessageFile: "message.txt"})
+	testOut(t, Source{}, outParams{MessageFile: "message.txt"})
 	assert.Equal(t, "file msg", testGerritLastReviewInput.Message)
 }
 
 func TestOutLabels(t *testing.T) {
-	testOut(Source{}, outParams{Labels: map[string]int{
+	testOut(t, Source{}, outParams{Labels: map[string]int{
 		"Code-Review": 1,
 		"Verified":    -1,
 	}})

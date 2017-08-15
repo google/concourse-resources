@@ -17,16 +17,11 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"time"
 )
 
 const (
 	timeStampLayout = "2006-01-02 15:04:05.999999999"
-)
-
-var (
-	versionFilename = filepath.Join(".git", "gerrit_version.json")
 )
 
 type Source struct {
@@ -77,24 +72,4 @@ func (vl VersionList) Less(i, j int) bool {
 
 func (vl VersionList) Swap(i, j int) {
 	vl[i], vl[j] = vl[j], vl[i]
-}
-
-type ResourceResponse struct {
-	Version  `json:"version"`
-	Metadata metadataMap `json:"metadata,omitempty"`
-}
-
-type metadataMap map[string]string
-
-type metadataItem struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-func (m metadataMap) MarshalJSON() ([]byte, error) {
-	var items []metadataItem
-	for key, value := range m {
-		items = append(items, metadataItem{key, value})
-	}
-	return json.Marshal(items)
 }

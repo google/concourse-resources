@@ -30,7 +30,6 @@ type request struct {
 }
 
 type ResourceResponse struct {
-	Version interface{} `json:"version"`
+	Version  interface{}     `json:"version"`
 	Metadata []MetadataField `json:"metadata,omitempty"`
 }
-

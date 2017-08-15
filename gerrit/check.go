@@ -43,12 +43,15 @@ func init() {
 	internal.RegisterCheckFunc(check)
 }
 
-func check(src Source, ver Version) []Version {
+func check(src Source, ver Version) (_ []Version, err error) {
 	authMan := newAuthManager(src)
 	defer authMan.cleanup()
 
 	c, err := gerritClient(src, authMan)
-	fatalErr(err, "error setting up gerrit client")
+	if err != nil {
+		err = fmt.Errorf("error setting up gerrit client: %v", err)
+		return
+	}
 
 	ctx := context.Background()
 
@@ -92,7 +95,10 @@ func check(src Source, ver Version) []Version {
 	log.Printf("query: %q %+v", query, queryOpt)
 
 	changes, err := c.QueryChanges(ctx, query, queryOpt)
-	fatalErr(err, "error querying for changes")
+	if err != nil {
+		err = fmt.Errorf("error querying for changes: %v", err)
+		return
+	}
 
 	// Write latest change update timestamp to disk
 	if len(changes) > 0 {
@@ -134,7 +140,7 @@ func check(src Source, ver Version) []Version {
 		}
 	}
 	sort.Sort(versions)
-	return versions
+	return versions, nil
 }
 
 func updateStampFilename(src Source, ver Version) string {

@@ -37,7 +37,7 @@ var (
 	defaultFetchProtocols = []string{"http", "anonymous http"}
 
 	// For testing
-	execGit               = realExecGit
+	execGit = realExecGit
 )
 
 type inParams struct {
@@ -49,32 +49,58 @@ func init() {
 	internal.RegisterInFunc(in)
 }
 
-func in(rs *internal.ResourceContext, src Source, ver Version, params inParams) Version {
+func in(rs *internal.ResourceContext, src Source, ver Version, params inParams) (_ Version, err error) {
 	authMan := newAuthManager(src)
 	defer authMan.cleanup()
 
 	c, err := gerritClient(src, authMan)
-	fatalErr(err, "error setting up gerrit client")
+	if err != nil {
+		err = fmt.Errorf("error setting up gerrit client: %v", err)
+		return
+	}
 
 	ctx := context.Background()
 
 	// Fetch requested version from Gerrit
 	change, rev, err := getVersionChangeRevision(c, ctx, ver)
-	fatalErr(err, "")
+	if err != nil {
+		return
+	}
 
 	fetchArgs, err := resolveFetchArgs(params, rev)
-	fatalErr(err, "could not resolve fetch args for change %q", change.ID)
+	if err != nil {
+		err = fmt.Errorf("could not resolve fetch args for change %q: %v", change.ID, err)
+		return
+	}
 
 	// Prepare destination repo and checkout requested revision
-	gitFatalErr(rs.TargetDir, "init")
-	gitFatalErr(rs.TargetDir, "config", "color.ui", "always")
+	err = git(rs.TargetDir, "init")
+	if err != nil {
+		return
+	}
+	err = git(rs.TargetDir, "config", "color.ui", "always")
+	if err != nil {
+		return
+	}
 
 	configArgs, err := authMan.gitConfigArgs()
-	fatalErr(err, "error getting git config args")
-	gitFatalErr(rs.TargetDir, configArgs...)
+	if err != nil {
+		err = fmt.Errorf("error getting git config args: %v", err)
+		return
+	}
+	err = git(rs.TargetDir, configArgs...)
+	if err != nil {
+		return
+	}
 
-	gitFatalErr(rs.TargetDir, fetchArgs...)
-	gitFatalErr(rs.TargetDir, "checkout", "FETCH_HEAD")
+	err = git(rs.TargetDir, fetchArgs...)
+	if err != nil {
+		return
+	}
+	err = git(rs.TargetDir, "checkout", "FETCH_HEAD")
+	if err != nil {
+		return
+	}
 
 	// Build response metadata
 	rs.AddMetadata("project", change.Project)
@@ -92,23 +118,26 @@ func in(rs *internal.ResourceContext, src Source, ver Version, params inParams) 
 	// Write gerrit_version.json
 	gerritVersionPath := filepath.Join(rs.TargetDir, gerritVersionFilename)
 	err = ver.WriteToFile(gerritVersionPath)
-	fatalErr(err, "error writing %q", gerritVersionPath)
+	if err != nil {
+		err = fmt.Errorf("error writing %q: %v", gerritVersionPath, err)
+		return
+	}
 
 	// Ignore gerrit_version.json file in repo
 	excludePath := filepath.Join(rs.TargetDir, ".git", "info", "exclude")
-	err = os.MkdirAll(filepath.Dir(excludePath), 0755)
-	if err == nil {
-		f, err := os.OpenFile(excludePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-		if err == nil {
+	ignoreErr := os.MkdirAll(filepath.Dir(excludePath), 0755)
+	if ignoreErr == nil {
+		f, ignoreErr := os.OpenFile(excludePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		if ignoreErr == nil {
 			defer f.Close()
-			_, err = fmt.Fprintf(f, "\n/%s\n", gerritVersionFilename)
+			_, ignoreErr = fmt.Fprintf(f, "\n/%s\n", gerritVersionFilename)
 		}
 	}
-	if err != nil {
-		log.Printf("error adding %q to %q: %v", gerritVersionPath, excludePath, err)
+	if ignoreErr != nil {
+		log.Printf("error adding %q to %q: %v", gerritVersionPath, excludePath, ignoreErr)
 	}
 
-	return ver
+	return ver, nil
 }
 
 func resolveFetchArgs(params inParams, rev *gerrit.RevisionInfo) ([]string, error) {
@@ -135,12 +164,15 @@ func resolveFetchArgs(params inParams, rev *gerrit.RevisionInfo) ([]string, erro
 	return []string{"fetch", fetchUrl, fetchRef}, nil
 }
 
-func gitFatalErr(dir string, args ...string) {
+func git(dir string, args ...string) error {
 	gitArgs := append([]string{"-C", dir}, args...)
 	log.Printf("git %v", gitArgs)
 	output, err := execGit(gitArgs...)
 	log.Printf("git output:\n%s", output)
-	fatalErr(err, "git failed")
+	if err != nil {
+		err = fmt.Errorf("git failed: %v", err)
+	}
+	return err
 }
 
 func realExecGit(args ...string) ([]byte, error) {

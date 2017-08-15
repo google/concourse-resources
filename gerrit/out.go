@@ -16,6 +16,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -36,31 +38,37 @@ func init() {
 	internal.RegisterOutFunc(out)
 }
 
-func out(rs *internal.ResourceContext, src Source, params outParams) Version {
+func out(rs *internal.ResourceContext, src Source, params outParams) (_ Version, err error) {
 	authMan := newAuthManager(src)
 	defer authMan.cleanup()
 
 	// Read gerrit_version.json
 	var ver Version
 	if params.Repository == "" {
-		log.Fatalln("param repository required")
+		err = errors.New("param repository required")
+		return
 	}
 	gerritVersionPath := filepath.Join(
 		rs.TargetDir, params.Repository, gerritVersionFilename)
-	err := ver.ReadFromFile(gerritVersionPath)
-	fatalErr(err, "error reading %q", gerritVersionPath)
+	err = ver.ReadFromFile(gerritVersionPath)
+	if err != nil {
+		err = fmt.Errorf("error reading %q: %v", gerritVersionPath, err)
+		return
+	}
 
 	// Build comment message
 	message := params.Message
 
 	if messageFile := params.MessageFile; messageFile != "" {
-		message_bytes, err := ioutil.ReadFile(filepath.Join(rs.TargetDir, messageFile))
+		var messageBytes []byte
+		messageBytes, err = ioutil.ReadFile(filepath.Join(rs.TargetDir, messageFile))
 		if err == nil {
-			message = string(message_bytes)
+			message = string(messageBytes)
 		} else {
 			log.Printf("error reading message file %q: %v", messageFile, err)
 			if message == "" {
-				log.Fatalln("no fallback message; failing")
+				err = errors.New("no fallback message; failing")
+				return
 			} else {
 				log.Printf("using fallback message %q", message)
 			}
@@ -69,7 +77,10 @@ func out(rs *internal.ResourceContext, src Source, params outParams) Version {
 
 	// Send review
 	c, err := gerritClient(src, authMan)
-	fatalErr(err, "error setting up gerrit client")
+	if err != nil {
+		err = fmt.Errorf("error setting up gerrit client: %v", err)
+		return
+	}
 
 	ctx := context.Background()
 
@@ -77,7 +88,10 @@ func out(rs *internal.ResourceContext, src Source, params outParams) Version {
 		Message: message,
 		Labels:  params.Labels,
 	})
-	fatalErr(err, "error sending review")
+	if err != nil {
+		err = fmt.Errorf("error sending review: %v", err)
+		return
+	}
 
-	return ver
+	return ver, nil
 }

@@ -2,16 +2,20 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"reflect"
 )
 
-var resourceContextPtrType = reflect.TypeOf(&ResourceContext{})
-
+var (
+	resourceContextPtrType = reflect.TypeOf(&ResourceContext{})
+	errorPtr               *error
+	errorType              = reflect.TypeOf(errorPtr).Elem()
+)
 
 type CheckFunc interface{}
 
-const CheckFuncPattern = "func(Source, Version) []Version"
+const CheckFuncPattern = "func(Source, Version) ([]Version, error)"
 
 func validateCheckFunc(checkFunc CheckFunc) (funcValue reflect.Value, sourceType, versionType reflect.Type) {
 	funcValue = reflect.ValueOf(checkFunc)
@@ -21,10 +25,11 @@ func validateCheckFunc(checkFunc CheckFunc) (funcValue reflect.Value, sourceType
 		funcType.NumIn() != 2 ||
 		funcType.In(0).Kind() != reflect.Struct ||
 		funcType.In(1).Kind() != reflect.Struct ||
-		funcType.NumOut() != 1 ||
+		funcType.NumOut() != 2 ||
 		funcType.Out(0).Kind() != reflect.Slice ||
-		funcType.Out(0).Elem() != funcType.In(1) {
-		panic("checkFunc must have signature like: " + CheckFuncPattern)
+		funcType.Out(0).Elem() != funcType.In(1) ||
+		funcType.Out(1) != errorType {
+		panic(fmt.Sprintf("checkFunc must have signature like '%s', got '%T'", CheckFuncPattern, checkFunc))
 	}
 	sourceType, versionType = funcType.In(0), funcType.In(1)
 	return
@@ -48,13 +53,17 @@ func RunCheck(reqReader io.Reader, respWriter io.Writer, checkFunc CheckFunc) er
 		return err
 	}
 
-	versions := call(funcValue, sourceValue, versionValue)
+	versions, err := call(funcValue, sourceValue, versionValue)
+	if err != nil {
+		return err
+	}
+
 	return json.NewEncoder(respWriter).Encode(versions)
 }
 
 type InFunc interface{}
 
-const InFuncSignature = "func(*ResourceContext, Source, Version, Params) Version"
+const InFuncPattern = "func(*ResourceContext, Source, Version, Params) (Version, error)"
 
 func validateInFunc(inFunc InFunc) (funcValue reflect.Value, sourceType, versionType, paramsType reflect.Type) {
 	funcValue = reflect.ValueOf(inFunc)
@@ -66,9 +75,10 @@ func validateInFunc(inFunc InFunc) (funcValue reflect.Value, sourceType, version
 		funcType.In(1).Kind() != reflect.Struct ||
 		funcType.In(2).Kind() != reflect.Struct ||
 		funcType.In(3).Kind() != reflect.Struct ||
-		funcType.NumOut() != 1 ||
-		funcType.Out(0) != funcType.In(2) {
-		panic("inFunc must have signature like " + InFuncSignature)
+		funcType.NumOut() != 2 ||
+		funcType.Out(0) != funcType.In(2) ||
+		funcType.Out(1) != errorType {
+		panic(fmt.Sprintf("inFunc must have signature like '%s', got '%T'", InFuncPattern, inFunc))
 	}
 	sourceType, versionType, paramsType = funcType.In(1), funcType.In(2), funcType.In(3)
 	return
@@ -98,16 +108,20 @@ func RunIn(targetDir string, reqReader io.Reader, respWriter io.Writer, inFunc I
 	}
 
 	resourceContext := ResourceContext{TargetDir: targetDir}
-	version := call(funcValue, reflect.ValueOf(&resourceContext), sourceValue, versionValue, paramsValue)
+	version, err := call(funcValue, reflect.ValueOf(&resourceContext), sourceValue, versionValue, paramsValue)
+	if err != nil {
+		return err
+	}
+
 	return json.NewEncoder(respWriter).Encode(ResourceResponse{
-		Version: version,
+		Version:  version,
 		Metadata: resourceContext.Metadata,
 	})
 }
 
 type OutFunc interface{}
 
-const OutFuncSignature = "func(*ResourceContext, Source, Params) Version"
+const OutFuncPattern = "func(*ResourceContext, Source, Params) (Version, error)"
 
 func validateOutFunc(outFunc OutFunc) (funcValue reflect.Value, sourceType, paramsType reflect.Type) {
 	funcValue = reflect.ValueOf(outFunc)
@@ -118,13 +132,14 @@ func validateOutFunc(outFunc OutFunc) (funcValue reflect.Value, sourceType, para
 		funcType.In(0) != resourceContextPtrType ||
 		funcType.In(1).Kind() != reflect.Struct ||
 		funcType.In(2).Kind() != reflect.Struct ||
-		funcType.NumOut() != 1 ||
-		funcType.Out(0).Kind() != reflect.Struct {
-		panic("outFunc must have signature like " + OutFuncSignature)
+		funcType.NumOut() != 2 ||
+		funcType.Out(0).Kind() != reflect.Struct ||
+		funcType.Out(1) != errorType {
+		panic(fmt.Sprintf("outFunc must have signature like '%s', got '%T'", OutFuncPattern, outFunc))
 	}
 	sourceType, paramsType = funcType.In(1), funcType.In(2)
 	return
-}	
+}
 
 func RunOut(targetDir string, reqReader io.Reader, respWriter io.Writer, outFunc OutFunc) error {
 	funcValue, sourceType, paramsType := validateOutFunc(outFunc)
@@ -145,9 +160,13 @@ func RunOut(targetDir string, reqReader io.Reader, respWriter io.Writer, outFunc
 	}
 
 	resourceContext := ResourceContext{TargetDir: targetDir}
-	version := call(funcValue, reflect.ValueOf(&resourceContext), sourceValue, paramsValue)
+	version, err := call(funcValue, reflect.ValueOf(&resourceContext), sourceValue, paramsValue)
+	if err != nil {
+		return err
+	}
+
 	return json.NewEncoder(respWriter).Encode(ResourceResponse{
-		Version: version,
+		Version:  version,
 		Metadata: resourceContext.Metadata,
 	})
 }
@@ -166,6 +185,11 @@ func unmarshalValue(field json.RawMessage, valueType reflect.Type) (val reflect.
 	return
 }
 
-func call(funcValue reflect.Value, in ...reflect.Value) interface{} {
-	return funcValue.Call(in)[0].Interface()	
+func call(funcValue reflect.Value, in ...reflect.Value) (result interface{}, err error) {
+	resultValues := funcValue.Call(in)
+	result = resultValues[0].Interface()
+	if !resultValues[1].IsNil() {
+		err = resultValues[1].Interface().(error)
+	}
+	return
 }

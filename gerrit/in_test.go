@@ -37,7 +37,7 @@ var (
 	testInDestDir string
 )
 
-func testIn(src Source, ver Version, params inParams) (Version, []internal.MetadataField) {
+func testIn(t *testing.T, src Source, ver Version, params inParams) (Version, []internal.MetadataField) {
 	src.Url = testGerritUrl
 
 	var err error
@@ -47,7 +47,8 @@ func testIn(src Source, ver Version, params inParams) (Version, []internal.Metad
 	}
 
 	rc := internal.ResourceContext{TargetDir: testInDestDir}
-	respVer := in(&rc, src, ver, params)
+	respVer, err := in(&rc, src, ver, params)
+	assert.NoError(t, err)
 	return respVer, rc.Metadata
 }
 
@@ -65,7 +66,7 @@ func mockGitWithArg(arg string, f func(args []string, idx int)) {
 }
 
 func TestInResponse(t *testing.T) {
-	ver, metadata := testIn(Source{}, testInVersion, inParams{})
+	ver, metadata := testIn(t, Source{}, testInVersion, inParams{})
 	assert.True(t, testInVersion.Equal(ver), "%v != %v", testInVersion, ver)
 	assert.Contains(t, metadata, internal.MetadataField{"project", "testproject"})
 	assert.Contains(t, metadata, internal.MetadataField{"subject", "Test Subject"})
@@ -84,7 +85,7 @@ func TestInGitInit(t *testing.T) {
 		}
 	})
 
-	testIn(Source{}, testInVersion, inParams{})
+	testIn(t, Source{}, testInVersion, inParams{})
 	assert.Equal(t, testInDestDir, initDir)
 }
 
@@ -94,7 +95,7 @@ func TestInGitFetch(t *testing.T) {
 		fetchUrl, fetchRef = args[idx+1], args[idx+2]
 	})
 
-	testIn(Source{}, testInVersion, inParams{})
+	testIn(t, Source{}, testInVersion, inParams{})
 	assert.Equal(t, fmt.Sprintf("%s/testproject.git", testGerritUrl), fetchUrl)
 	assert.Equal(t, "refs/changes/1/1/1", fetchRef)
 }
@@ -105,7 +106,7 @@ func TestInGitFetchProtocol(t *testing.T) {
 		fetchUrl, fetchRef = args[idx+1], args[idx+2]
 	})
 
-	testIn(Source{}, testInVersion, inParams{FetchProtocol: "fake"})
+	testIn(t, Source{}, testInVersion, inParams{FetchProtocol: "fake"})
 	assert.Equal(t, "fake://example.com", fetchUrl)
 	assert.Equal(t, "fake/ref", fetchRef)
 }
@@ -116,7 +117,7 @@ func TestInGitFetchUrl(t *testing.T) {
 		fetchUrl, fetchRef = args[idx+1], args[idx+2]
 	})
 
-	testIn(Source{}, testInVersion, inParams{FetchUrl: "some://otherurl"})
+	testIn(t, Source{}, testInVersion, inParams{FetchUrl: "some://otherurl"})
 	assert.Equal(t, "some://otherurl", fetchUrl)
 	assert.Equal(t, "refs/changes/1/1/1", fetchRef)
 }
@@ -134,7 +135,7 @@ func TestInGitCookies(t *testing.T) {
 	})
 
 	cookies := "localhost\tFALSE\t/\tFALSE\t9999999999\tfoo\tbar\n"
-	testIn(Source{Cookies: cookies}, testInVersion, inParams{})
+	testIn(t, Source{Cookies: cookies}, testInVersion, inParams{})
 	assert.Equal(t, cookies, string(cookiesFileData))
 
 	// Cookie file should be deleted
@@ -144,7 +145,7 @@ func TestInGitCookies(t *testing.T) {
 }
 
 func TestInGerritVersionFile(t *testing.T) {
-	testIn(Source{}, testInVersion, inParams{})
+	testIn(t, Source{}, testInVersion, inParams{})
 
 	var ver Version
 	versionPath := filepath.Join(testInDestDir, gerritVersionFilename)
