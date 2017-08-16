@@ -38,37 +38,42 @@ func init() {
 	internal.RegisterOutFunc(out)
 }
 
-func out(rs *internal.ResourceContext, src Source, params outParams) (_ Version, err error) {
+func out(req internal.OutRequest) error {
+	var src Source
+	var params outParams
+	err := req.Decode(&src, &params)
+	if err != nil {
+		return err
+	}
+
 	authMan := newAuthManager(src)
 	defer authMan.cleanup()
 
 	// Read gerrit_version.json
 	var ver Version
 	if params.Repository == "" {
-		err = errors.New("param repository required")
-		return
+		return errors.New("param repository required")
 	}
 	gerritVersionPath := filepath.Join(
-		rs.TargetDir, params.Repository, gerritVersionFilename)
+		req.TargetDir(), params.Repository, gerritVersionFilename)
 	err = ver.ReadFromFile(gerritVersionPath)
 	if err != nil {
-		err = fmt.Errorf("error reading %q: %v", gerritVersionPath, err)
-		return
+		return fmt.Errorf("error reading %q: %v", gerritVersionPath, err)
 	}
+	req.SetResponseVersion(ver)
 
 	// Build comment message
 	message := params.Message
 
 	if messageFile := params.MessageFile; messageFile != "" {
 		var messageBytes []byte
-		messageBytes, err = ioutil.ReadFile(filepath.Join(rs.TargetDir, messageFile))
+		messageBytes, err = ioutil.ReadFile(filepath.Join(req.TargetDir(), messageFile))
 		if err == nil {
 			message = string(messageBytes)
 		} else {
 			log.Printf("error reading message file %q: %v", messageFile, err)
 			if message == "" {
-				err = errors.New("no fallback message; failing")
-				return
+				return errors.New("no fallback message; failing")
 			} else {
 				log.Printf("using fallback message %q", message)
 			}
@@ -78,8 +83,7 @@ func out(rs *internal.ResourceContext, src Source, params outParams) (_ Version,
 	// Send review
 	c, err := gerritClient(src, authMan)
 	if err != nil {
-		err = fmt.Errorf("error setting up gerrit client: %v", err)
-		return
+		return fmt.Errorf("error setting up gerrit client: %v", err)
 	}
 
 	ctx := context.Background()
@@ -89,9 +93,8 @@ func out(rs *internal.ResourceContext, src Source, params outParams) (_ Version,
 		Labels:  params.Labels,
 	})
 	if err != nil {
-		err = fmt.Errorf("error sending review: %v", err)
-		return
+		return fmt.Errorf("error sending review: %v", err)
 	}
 
-	return ver, nil
+	return nil
 }

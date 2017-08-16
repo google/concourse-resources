@@ -30,6 +30,8 @@ import (
 	"time"
 
 	"golang.org/x/build/gerrit"
+
+	"github.com/google/concourse-resources/internal"
 )
 
 const (
@@ -55,6 +57,17 @@ var (
 	testGerritLastRevision      string
 	testGerritLastReviewInput   *gerrit.ReviewInput
 )
+
+type testRequest struct {
+	Source  `json:"source"`
+	Version `json:"version"`
+	Params  interface{} `json:"params"`
+}
+
+type testResourceResponse struct {
+	Version `json:"version"`
+	Metadata []internal.MetadataField `json:"metadata"`
+}
 
 func TestMain(m *testing.M) {
 	var err error

@@ -43,17 +43,21 @@ func init() {
 	internal.RegisterCheckFunc(check)
 }
 
-func check(src Source, ver Version) (_ []Version, err error) {
+func check(req internal.CheckRequest) error {
+	var src Source
+	var ver Version
+	err := req.Decode(&src, &ver)
+	if err != nil {
+		return err
+	}
+
 	authMan := newAuthManager(src)
 	defer authMan.cleanup()
 
 	c, err := gerritClient(src, authMan)
 	if err != nil {
-		err = fmt.Errorf("error setting up gerrit client: %v", err)
-		return
+		return fmt.Errorf("error setting up gerrit client: %v", err)
 	}
-
-	ctx := context.Background()
 
 	// Setup Gerrit query
 	query := src.Query
@@ -81,7 +85,10 @@ func check(src Source, ver Version) (_ []Version, err error) {
 
 		// As an optimization, try to read the latest change update timestamp from disk
 		// and use that to filter instead.
-		lastUpdate = readUpdatedStamp(src, ver)
+		lastUpdate, err = readUpdatedStamp(src, ver)
+		if err != nil {
+			log.Println(err)
+		}
 		if !lastUpdate.IsZero() {
 			afterTime = lastUpdate
 		}
@@ -94,10 +101,10 @@ func check(src Source, ver Version) (_ []Version, err error) {
 
 	log.Printf("query: %q %+v", query, queryOpt)
 
+	ctx := context.Background()
 	changes, err := c.QueryChanges(ctx, query, queryOpt)
 	if err != nil {
-		err = fmt.Errorf("error querying for changes: %v", err)
-		return
+		return fmt.Errorf("error querying for changes: %v", err)
 	}
 
 	// Write latest change update timestamp to disk
@@ -106,7 +113,10 @@ func check(src Source, ver Version) (_ []Version, err error) {
 		if lastChange.Updated.Time().After(lastUpdate) {
 			lastUpdate = lastChange.Updated.Time()
 		}
-		writeUpdatedStamp(src, ver, lastUpdate)
+		err = writeUpdatedStamp(src, ver, lastUpdate)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	// Translate Gerrit changes into Versions
@@ -140,7 +150,10 @@ func check(src Source, ver Version) (_ []Version, err error) {
 		}
 	}
 	sort.Sort(versions)
-	return versions, nil
+	for _, version := range versions {
+		req.AddResponseVersion(version)
+	}
+	return nil
 }
 
 func updateStampFilename(src Source, ver Version) string {
@@ -152,11 +165,13 @@ func updateStampFilename(src Source, ver Version) string {
 		fmt.Sprintf("concourse-gerrit-%s.stamp", hashed))
 }
 
-func readUpdatedStamp(src Source, ver Version) (t time.Time) {
+func readUpdatedStamp(src Source, ver Version) (t time.Time, err error) {
 	f, err := os.Open(updateStampFilename(src, ver))
 	if err != nil {
-		if !os.IsNotExist(err) {
-			log.Printf("error opening update stamp file: %s", err)
+		if os.IsNotExist(err) {
+			err = nil
+		} else {
+			err = fmt.Errorf("error opening update stamp file: %v", err)
 		}
 		return
 	}
@@ -164,21 +179,21 @@ func readUpdatedStamp(src Source, ver Version) (t time.Time) {
 
 	err = json.NewDecoder(f).Decode(&t)
 	if err != nil {
-		log.Printf("error reading update stamp file: %s", err)
+		err = fmt.Errorf("error reading update stamp file: %f", err)
 	}
-	return t
+	return
 }
 
-func writeUpdatedStamp(src Source, ver Version, updated time.Time) {
+func writeUpdatedStamp(src Source, ver Version, updated time.Time) error {
 	f, err := os.OpenFile(updateStampFilename(src, ver), os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		log.Printf("error opening update stamp file: %s", err)
-		return
+		return fmt.Errorf("error opening update stamp file: %v", err)
 	}
 	defer f.Close()
 
 	err = json.NewEncoder(f).Encode(updated)
 	if err != nil {
-		log.Printf("error writing update stamp file: %s", err)
+		return fmt.Errorf("error writing update stamp file: %v", err)
 	}
+	return nil
 }

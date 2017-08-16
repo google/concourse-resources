@@ -16,7 +16,7 @@ func RunInMain(inFunc InFunc) {
 	if len(os.Args) < 2 {
 		log.Fatalln("in script requires a target directory argument")
 	}
-	err := RunIn(os.Args[1], os.Stdin, os.Stdout, inFunc)
+	err := RunIn(os.Stdin, os.Stdout, os.Args[1], inFunc)
 	if err != nil {
 		log.Fatalf("error processing in request: %v", err)
 	}
@@ -26,7 +26,7 @@ func RunOutMain(outFunc OutFunc) {
 	if len(os.Args) < 2 {
 		log.Fatalln("out script requires a target directory argument")
 	}
-	err := RunOut(os.Args[1], os.Stdin, os.Stdout, outFunc)
+	err := RunOut(os.Stdin, os.Stdout, os.Args[1], outFunc)
 	if err != nil {
 		log.Fatalf("error processing out request: %v", err)
 	}
@@ -39,17 +39,14 @@ type MainRunner struct {
 }
 
 func (r *MainRunner) SetCheckFunc(checkFunc CheckFunc) {
-	validateCheckFunc(checkFunc)
 	r.checkFunc = checkFunc
 }
 
 func (r *MainRunner) SetInFunc(inFunc InFunc) {
-	validateInFunc(inFunc)
 	r.inFunc = inFunc
 }
 
 func (r *MainRunner) SetOutFunc(outFunc OutFunc) {
-	validateOutFunc(outFunc)
 	r.outFunc = outFunc
 }
 

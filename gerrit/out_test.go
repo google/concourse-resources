@@ -45,10 +45,12 @@ func testOut(t *testing.T, src Source, params outParams) Version {
 	}
 	params.Repository = filepath.Base(repoDir)
 
-	rs := internal.ResourceContext{TargetDir: testTempDir}
-	ver, err := out(&rs, src, params)
-	assert.NoError(t, err)
-	return ver
+
+	src.Url = testGerritUrl
+	req := testRequest{Source: src, Params: params}
+	var resp testResourceResponse
+	assert.NoError(t, internal.TestOutFunc(t, req, &resp, testTempDir, out))
+	return resp.Version
 }
 
 func TestOutVersion(t *testing.T) {

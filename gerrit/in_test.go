@@ -46,10 +46,11 @@ func testIn(t *testing.T, src Source, ver Version, params inParams) (Version, []
 		panic(err)
 	}
 
-	rc := internal.ResourceContext{TargetDir: testInDestDir}
-	respVer, err := in(&rc, src, ver, params)
-	assert.NoError(t, err)
-	return respVer, rc.Metadata
+	src.Url = testGerritUrl
+	req := testRequest{Source: src, Version: ver, Params: params}
+	var resp testResourceResponse
+	assert.NoError(t, internal.TestInFunc(t, req, &resp, testInDestDir, in))
+	return resp.Version, resp.Metadata
 }
 
 func mockGitWithArg(arg string, f func(args []string, idx int)) {
@@ -68,10 +69,10 @@ func mockGitWithArg(arg string, f func(args []string, idx int)) {
 func TestInResponse(t *testing.T) {
 	ver, metadata := testIn(t, Source{}, testInVersion, inParams{})
 	assert.True(t, testInVersion.Equal(ver), "%v != %v", testInVersion, ver)
-	assert.Contains(t, metadata, internal.MetadataField{"project", "testproject"})
-	assert.Contains(t, metadata, internal.MetadataField{"subject", "Test Subject"})
-	assert.Contains(t, metadata, internal.MetadataField{"uploader", "Testy McTestface <testy@example.com>"})
-	assert.Contains(t, metadata, internal.MetadataField{"link", fmt.Sprintf("%s/c/1/1", testGerritUrl)})
+	assert.Contains(t, metadata, internal.MetadataField{Key: "project", Value: "testproject"})
+	assert.Contains(t, metadata, internal.MetadataField{Key: "subject", Value: "Test Subject"})
+	assert.Contains(t, metadata, internal.MetadataField{Key: "uploader", Value: "Testy McTestface <testy@example.com>"})
+	assert.Contains(t, metadata, internal.MetadataField{Key: "link", Value: fmt.Sprintf("%s/c/1/1", testGerritUrl)})
 }
 
 func TestInGitInit(t *testing.T) {
