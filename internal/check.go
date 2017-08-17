@@ -12,8 +12,8 @@ type CheckRequest interface {
 }
 
 type checkRequest struct {
-	rawSource    json.RawMessage
-	rawVersion   json.RawMessage
+	rawSource        json.RawMessage
+	rawVersion       json.RawMessage
 	responseVersions []interface{}
 }
 
@@ -44,8 +44,8 @@ func RunCheck(reqReader io.Reader, respWriter io.Writer, checkFunc CheckFunc) er
 	}
 
 	req := checkRequest{
-		rawSource:  rawReq.Source,
-		rawVersion: rawReq.Version,
+		rawSource:        rawReq.Source,
+		rawVersion:       rawReq.Version,
 		responseVersions: []interface{}{},
 	}
 

@@ -1,35 +1,39 @@
 package internal
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"os"
 )
 
-func RunCheckMain(checkFunc CheckFunc) {
+func RunCheckMain(checkFunc CheckFunc) error {
 	err := RunCheck(os.Stdin, os.Stdout, checkFunc)
 	if err != nil {
-		log.Fatalf("error processing check request: %v", err)
+		return fmt.Errorf("error processing check request: %v", err)
 	}
+	return nil
 }
 
-func RunInMain(inFunc InFunc) {
+func RunInMain(inFunc InFunc) error {
 	if len(os.Args) < 2 {
-		log.Fatalln("in script requires a target directory argument")
+		return errors.New("in script requires a target directory argument")
 	}
 	err := RunIn(os.Stdin, os.Stdout, os.Args[1], inFunc)
 	if err != nil {
-		log.Fatalf("error processing in request: %v", err)
+		return fmt.Errorf("error processing in request: %v", err)
 	}
+	return nil
 }
 
-func RunOutMain(outFunc OutFunc) {
+func RunOutMain(outFunc OutFunc) error {
 	if len(os.Args) < 2 {
-		log.Fatalln("out script requires a target directory argument")
+		return errors.New("out script requires a target directory argument")
 	}
 	err := RunOut(os.Stdin, os.Stdout, os.Args[1], outFunc)
 	if err != nil {
-		log.Fatalf("error processing out request: %v", err)
+		return fmt.Errorf("error processing out request: %v", err)
 	}
+	return nil
 }
 
 type MainRunner struct {
@@ -50,25 +54,25 @@ func (r *MainRunner) SetOutFunc(outFunc OutFunc) {
 	r.outFunc = outFunc
 }
 
-func (r MainRunner) RunMain() {
+func (r MainRunner) RunMain() error {
 	switch os.Args[0] {
 	case "check":
 		if r.checkFunc == nil {
-			log.Fatalln("no CheckFunc set")
+			return errors.New("no CheckFunc set")
 		}
-		RunCheckMain(r.checkFunc)
+		return RunCheckMain(r.checkFunc)
 	case "in":
 		if r.checkFunc == nil {
-			log.Fatalln("no InFunc set")
+			return errors.New("no InFunc set")
 		}
-		RunInMain(r.inFunc)
+		return RunInMain(r.inFunc)
 	case "out":
 		if r.checkFunc == nil {
-			log.Fatalln("no OutFunc set")
+			errors.New("no OutFunc set")
 		}
-		RunOutMain(r.outFunc)
+		return RunOutMain(r.outFunc)
 	default:
-		log.Fatalln("RunMain: os.Args[0] must be one of 'check', 'in', 'out'")
+		return errors.New("RunMain: os.Args[0] must be one of 'check', 'in', 'out'")
 	}
 }
 
@@ -86,6 +90,15 @@ func RegisterOutFunc(outFunc OutFunc) {
 	defaultMainRunner.SetOutFunc(outFunc)
 }
 
-func RunMain() {
-	defaultMainRunner.RunMain()
+func RunMain() error {
+	return defaultMainRunner.RunMain()
+}
+
+func RunMainExit() {
+	err := RunMain()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+	os.Exit(0)
 }

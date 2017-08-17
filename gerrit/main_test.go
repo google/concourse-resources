@@ -65,7 +65,7 @@ type testRequest struct {
 }
 
 type testResourceResponse struct {
-	Version `json:"version"`
+	Version  `json:"version"`
 	Metadata []internal.MetadataField `json:"metadata"`
 }
 

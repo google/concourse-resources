@@ -26,5 +26,8 @@ var (
 
 func main() {
 	log.Printf("gerrit-resource build %s", Build)
-	internal.RunMain()
+	err := internal.RunMain()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

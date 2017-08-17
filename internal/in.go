@@ -54,9 +54,9 @@ func RunIn(reqReader io.Reader, respWriter io.Writer, targetDir string, inFunc I
 
 	req := inRequest{
 		resourceRequest: resourceRequest{targetDir: targetDir},
-		rawSource:   rawReq.Source,
-		rawVersion:  rawReq.Version,
-		rawParams:   rawReq.Params,
+		rawSource:       rawReq.Source,
+		rawVersion:      rawReq.Version,
+		rawParams:       rawReq.Params,
 	}
 
 	err = inFunc(&req)

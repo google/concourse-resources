@@ -45,7 +45,6 @@ func testOut(t *testing.T, src Source, params outParams) Version {
 	}
 	params.Repository = filepath.Base(repoDir)
 
-
 	src.Url = testGerritUrl
 	req := testRequest{Source: src, Params: params}
 	var resp testResourceResponse

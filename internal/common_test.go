@@ -13,13 +13,13 @@ type testParams struct {
 }
 
 type testRequest struct {
-	Source testSource `json:"source,omitempty"`
+	Source  testSource  `json:"source,omitempty"`
 	Version testVersion `json:"version,omitempty"`
-	Params testParams `json:"params,omitempty"`
+	Params  testParams  `json:"params,omitempty"`
 }
 
 var testRequestData = testRequest{
-	Source: testSource{Src: "src.go"},
+	Source:  testSource{Src: "src.go"},
 	Version: testVersion{Ver: 1},
-	Params: testParams{Param: true},
+	Params:  testParams{Param: true},
 }

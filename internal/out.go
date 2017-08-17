@@ -43,8 +43,8 @@ func RunOut(reqReader io.Reader, respWriter io.Writer, targetDir string, outFunc
 
 	req := outRequest{
 		resourceRequest: resourceRequest{targetDir: targetDir},
-		rawSource:   rawReq.Source,
-		rawParams:   rawReq.Params,
+		rawSource:       rawReq.Source,
+		rawParams:       rawReq.Params,
 	}
 
 	err = outFunc(&req)
