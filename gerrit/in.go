@@ -26,7 +26,7 @@ import (
 
 	"golang.org/x/build/gerrit"
 
-	"github.com/google/concourse-resources/internal"
+	"github.com/google/concourse-resources/internal/resource"
 )
 
 const (
@@ -46,10 +46,10 @@ type inParams struct {
 }
 
 func init() {
-	internal.RegisterInFunc(in)
+	resource.RegisterInFunc(in)
 }
 
-func in(req internal.InRequest) error {
+func in(req resource.InRequest) error {
 	var src Source
 	var ver Version
 	var params inParams

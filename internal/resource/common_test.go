@@ -1,4 +1,4 @@
-package internal
+package resource
 
 type testSource struct {
 	Src string `json:"src"`

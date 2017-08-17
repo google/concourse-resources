@@ -21,14 +21,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/google/concourse-resources/internal"
+	"github.com/google/concourse-resources/internal/resource"
 )
 
 func testCheck(t *testing.T, src Source, ver Version) []Version {
 	src.Url = testGerritUrl
 	req := testRequest{Source: src, Version: ver}
 	var versions []Version
-	assert.NoError(t, internal.TestCheckFunc(t, req, &versions, check))
+	assert.NoError(t, resource.TestCheckFunc(t, req, &versions, check))
 	return versions
 }
 

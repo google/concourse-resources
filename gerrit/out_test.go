@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/google/concourse-resources/internal"
+	"github.com/google/concourse-resources/internal/resource"
 )
 
 var (
@@ -48,7 +48,7 @@ func testOut(t *testing.T, src Source, params outParams) Version {
 	src.Url = testGerritUrl
 	req := testRequest{Source: src, Params: params}
 	var resp testResourceResponse
-	assert.NoError(t, internal.TestOutFunc(t, req, &resp, testTempDir, out))
+	assert.NoError(t, resource.TestOutFunc(t, req, &resp, testTempDir, out))
 	return resp.Version
 }
 

@@ -24,7 +24,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/google/concourse-resources/internal"
+	"github.com/google/concourse-resources/internal/resource"
 )
 
 var (
@@ -37,7 +37,7 @@ var (
 	testInDestDir string
 )
 
-func testIn(t *testing.T, src Source, ver Version, params inParams) (Version, []internal.MetadataField) {
+func testIn(t *testing.T, src Source, ver Version, params inParams) (Version, []resource.MetadataField) {
 	src.Url = testGerritUrl
 
 	var err error
@@ -49,7 +49,7 @@ func testIn(t *testing.T, src Source, ver Version, params inParams) (Version, []
 	src.Url = testGerritUrl
 	req := testRequest{Source: src, Version: ver, Params: params}
 	var resp testResourceResponse
-	assert.NoError(t, internal.TestInFunc(t, req, &resp, testInDestDir, in))
+	assert.NoError(t, resource.TestInFunc(t, req, &resp, testInDestDir, in))
 	return resp.Version, resp.Metadata
 }
 
@@ -69,10 +69,10 @@ func mockGitWithArg(arg string, f func(args []string, idx int)) {
 func TestInResponse(t *testing.T) {
 	ver, metadata := testIn(t, Source{}, testInVersion, inParams{})
 	assert.True(t, testInVersion.Equal(ver), "%v != %v", testInVersion, ver)
-	assert.Contains(t, metadata, internal.MetadataField{Key: "project", Value: "testproject"})
-	assert.Contains(t, metadata, internal.MetadataField{Key: "subject", Value: "Test Subject"})
-	assert.Contains(t, metadata, internal.MetadataField{Key: "uploader", Value: "Testy McTestface <testy@example.com>"})
-	assert.Contains(t, metadata, internal.MetadataField{Key: "link", Value: fmt.Sprintf("%s/c/1/1", testGerritUrl)})
+	assert.Contains(t, metadata, resource.MetadataField{Key: "project", Value: "testproject"})
+	assert.Contains(t, metadata, resource.MetadataField{Key: "subject", Value: "Test Subject"})
+	assert.Contains(t, metadata, resource.MetadataField{Key: "uploader", Value: "Testy McTestface <testy@example.com>"})
+	assert.Contains(t, metadata, resource.MetadataField{Key: "link", Value: fmt.Sprintf("%s/c/1/1", testGerritUrl)})
 }
 
 func TestInGitInit(t *testing.T) {

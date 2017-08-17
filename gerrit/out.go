@@ -24,7 +24,7 @@ import (
 
 	"golang.org/x/build/gerrit"
 
-	"github.com/google/concourse-resources/internal"
+	"github.com/google/concourse-resources/internal/resource"
 )
 
 type outParams struct {
@@ -35,10 +35,10 @@ type outParams struct {
 }
 
 func init() {
-	internal.RegisterOutFunc(out)
+	resource.RegisterOutFunc(out)
 }
 
-func out(req internal.OutRequest) error {
+func out(req resource.OutRequest) error {
 	var src Source
 	var params outParams
 	err := req.Decode(&src, &params)

@@ -28,7 +28,7 @@ import (
 
 	"golang.org/x/build/gerrit"
 
-	"github.com/google/concourse-resources/internal"
+	"github.com/google/concourse-resources/internal/resource"
 )
 
 const (
@@ -40,10 +40,10 @@ var (
 )
 
 func init() {
-	internal.RegisterCheckFunc(check)
+	resource.RegisterCheckFunc(check)
 }
 
-func check(req internal.CheckRequest) error {
+func check(req resource.CheckRequest) error {
 	var src Source
 	var ver Version
 	err := req.Decode(&src, &ver)

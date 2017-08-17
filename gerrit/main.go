@@ -17,7 +17,7 @@ package main
 import (
 	"log"
 
-	"github.com/google/concourse-resources/internal"
+	"github.com/google/concourse-resources/internal/resource"
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 
 func main() {
 	log.Printf("gerrit-resource build %s", Build)
-	err := internal.RunMain()
+	err := resource.RunMain()
 	if err != nil {
 		log.Fatalln(err)
 	}

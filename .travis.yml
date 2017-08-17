@@ -6,4 +6,4 @@ go:
 # Skip install to make sure vendoring is working
 install: true
 
-script: go test -v ./internal ./gerrit
+script: go test -v ./internal/resource ./gerrit

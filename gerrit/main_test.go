@@ -31,7 +31,7 @@ import (
 
 	"golang.org/x/build/gerrit"
 
-	"github.com/google/concourse-resources/internal"
+	"github.com/google/concourse-resources/internal/resource"
 )
 
 const (
@@ -66,7 +66,7 @@ type testRequest struct {
 
 type testResourceResponse struct {
 	Version  `json:"version"`
-	Metadata []internal.MetadataField `json:"metadata"`
+	Metadata []resource.MetadataField `json:"metadata"`
 }
 
 func TestMain(m *testing.M) {
