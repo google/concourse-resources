@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func RunCheckMain(checkFunc CheckFunc) error {
@@ -69,7 +70,8 @@ func (r *MainRunner) SetOutFunc(outFunc OutFunc) {
 }
 
 func (r MainRunner) RunMain() error {
-	switch os.Args[0] {
+	progName := filepath.Base(os.Args[0])
+	switch progName {
 	case "check":
 		if r.checkFunc == nil {
 			return errors.New("no CheckFunc set")
@@ -82,11 +84,12 @@ func (r MainRunner) RunMain() error {
 		return RunInMain(r.inFunc)
 	case "out":
 		if r.checkFunc == nil {
-			errors.New("no OutFunc set")
+			return errors.New("no OutFunc set")
 		}
 		return RunOutMain(r.outFunc)
 	default:
-		return errors.New("RunMain: os.Args[0] must be one of 'check', 'in', 'out'")
+		return fmt.Errorf(
+			"RunMain: os.Args[0] must be one of 'check', 'in', 'out'; got %q", progName)
 	}
 }
 

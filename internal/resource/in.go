@@ -48,7 +48,7 @@ func (req *inRequest) Decode(source interface{}, version interface{}, params int
 		req.response.Version = version
 	}
 
-	if params != nil {
+	if params != nil && len(req.rawParams) > 0 {
 		err = json.Unmarshal(req.rawParams, params)
 		if err != nil {
 			return fmt.Errorf("error decoding params: %v", err)

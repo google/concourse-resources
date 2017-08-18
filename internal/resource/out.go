@@ -37,7 +37,7 @@ func (req outRequest) Decode(source interface{}, params interface{}) error {
 		return fmt.Errorf("error decoding source: %v", err)
 	}
 
-	if params != nil {
+	if params != nil && len(req.rawParams) > 0 {
 		err = json.Unmarshal(req.rawParams, params)
 		if err != nil {
 			return fmt.Errorf("error decoding params: %v", err)

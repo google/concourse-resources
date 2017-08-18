@@ -37,9 +37,11 @@ func (req checkRequest) Decode(source interface{}, version interface{}) error {
 		return fmt.Errorf("error decoding source: %v", err)
 	}
 
-	err = json.Unmarshal(req.rawVersion, version)
-	if err != nil {
-		return fmt.Errorf("error decoding version: %v", err)
+	if len(req.rawVersion) > 0 {
+		err = json.Unmarshal(req.rawVersion, version)
+		if err != nil {
+			return fmt.Errorf("error decoding version: %v", err)
+		}
 	}
 
 	return nil
