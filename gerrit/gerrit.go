@@ -36,6 +36,7 @@ func getVersionChangeRevision(
 	client *gerrit.Client,
 	ctx context.Context,
 	ver Version,
+	extraFields ...string,
 ) (*gerrit.ChangeInfo, *gerrit.RevisionInfo, error) {
 	if ver.ChangeId == "" {
 		return nil, nil, fmt.Errorf("version change_id required")
@@ -43,9 +44,12 @@ func getVersionChangeRevision(
 	if ver.Revision == "" {
 		return nil, nil, fmt.Errorf("version revision required")
 	}
+
 	change, err := client.GetChange(
 		ctx, ver.ChangeId,
-		gerrit.QueryChangesOpt{Fields: []string{"ALL_REVISIONS", "DETAILED_ACCOUNTS"}})
+		gerrit.QueryChangesOpt{
+			Fields: append([]string{"ALL_REVISIONS", "DETAILED_ACCOUNTS"}, extraFields...),
+		})
 	if err != nil {
 		return nil, nil, fmt.Errorf(
 			"error getting change %q: %v", ver.ChangeId, err)

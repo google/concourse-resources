@@ -51,14 +51,14 @@ func (req *resourceRequest) SetResponseVersion(version interface{}) {
 	req.response.Version = version
 }
 
-func (req *resourceRequest) AddResponseMetadata(key string, value string) {
+func (req *resourceRequest) AddResponseMetadata(name string, value string) {
 	req.response.Metadata = append(
 		req.response.Metadata,
-		MetadataField{Key: key, Value: value})
+		MetadataField{Name: name, Value: value})
 }
 
 type MetadataField struct {
-	Key   string `json:"key"`
+	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
