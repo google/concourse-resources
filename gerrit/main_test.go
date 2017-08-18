@@ -42,6 +42,7 @@ const (
 	testRevisionPrefix = "deadbeef"
 	testName           = "Testy McTestface"
 	testEmail          = "testy@example.com"
+	testCommitMessage  = "Commit message"
 )
 
 var (
@@ -135,6 +136,14 @@ func testBuildChange(testNumber int, revisionCount int) gerrit.ChangeInfo {
 					URL: "fake://example.com",
 					Ref: "fake/ref",
 				},
+			},
+			Commit: &gerrit.CommitInfo{
+				Author: gerrit.GitPersonInfo{
+					Name: testName,
+					Email: testEmail,
+				},
+				Subject: testSubject,
+				Message: testCommitMessage,
 			},
 		}
 		change.CurrentRevision = revision

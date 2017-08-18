@@ -37,8 +37,8 @@ func TestRunOut(t *testing.T) {
 	}))
 	assert.Equal(t, testVersion{Ver: 1}, responseVersion)
 	assert.Equal(t, []MetadataField{
-		MetadataField{Key: "meta", Value: "data"},
-		MetadataField{Key: "more", Value: "meta"},
+		MetadataField{Name: "meta", Value: "data"},
+		MetadataField{Name: "more", Value: "meta"},
 	}, response.Metadata)
 }
 

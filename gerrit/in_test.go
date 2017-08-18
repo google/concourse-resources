@@ -69,10 +69,13 @@ func mockGitWithArg(arg string, f func(args []string, idx int)) {
 func TestInResponse(t *testing.T) {
 	ver, metadata := testIn(t, Source{}, testInVersion, inParams{})
 	assert.True(t, testInVersion.Equal(ver), "%v != %v", testInVersion, ver)
-	assert.Contains(t, metadata, resource.MetadataField{Key: "project", Value: "testproject"})
-	assert.Contains(t, metadata, resource.MetadataField{Key: "subject", Value: "Test Subject"})
-	assert.Contains(t, metadata, resource.MetadataField{Key: "uploader", Value: "Testy McTestface <testy@example.com>"})
-	assert.Contains(t, metadata, resource.MetadataField{Key: "link", Value: fmt.Sprintf("%s/c/1/1", testGerritUrl)})
+	assert.Contains(t, metadata, resource.MetadataField{Name: "project", Value: "testproject"})
+	assert.Contains(t, metadata, resource.MetadataField{Name: "change subject", Value: "Test Subject"})
+	assert.Contains(t, metadata, resource.MetadataField{Name: "revision uploader", Value: "Testy McTestface <testy@example.com>"})
+	assert.Contains(t, metadata, resource.MetadataField{Name: "revision link", Value: fmt.Sprintf("%s/c/1/1", testGerritUrl)})
+	assert.Contains(t, metadata, resource.MetadataField{Name: "commit author", Value: "Testy McTestface <testy@example.com>"})
+	assert.Contains(t, metadata, resource.MetadataField{Name: "commit subject", Value: "Test Subject"})
+	assert.Contains(t, metadata, resource.MetadataField{Name: "commit message", Value: "Commit message"})
 }
 
 func TestInGitInit(t *testing.T) {

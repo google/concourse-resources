@@ -69,7 +69,7 @@ func in(req resource.InRequest) error {
 	ctx := context.Background()
 
 	// Fetch requested version from Gerrit
-	change, rev, err := getVersionChangeRevision(c, ctx, ver)
+	change, rev, err := getVersionChangeRevision(c, ctx, ver, "CURRENT_COMMIT", "DETAILED_LABELS")
 	if err != nil {
 		return err
 	}
@@ -109,15 +109,50 @@ func in(req resource.InRequest) error {
 
 	// Build response metadata
 	req.AddResponseMetadata("project", change.Project)
-	req.AddResponseMetadata("subject", change.Subject)
-	if rev.Uploader != nil {
-		req.AddResponseMetadata("uploader", fmt.Sprintf("%s <%s>", rev.Uploader.Name, rev.Uploader.Email))
+	req.AddResponseMetadata("branch", change.Branch)
+	req.AddResponseMetadata("change subject", change.Subject)
+
+	if change.Owner != nil {
+		req.AddResponseMetadata("change owner",
+			fmt.Sprintf("%s <%s>", change.Owner.Name, change.Owner.Email))
 	}
+
+	for label, labelInfo := range change.Labels {
+		for _, approvalInfo := range labelInfo.All {
+			if approvalInfo.Value != 0 {
+				req.AddResponseMetadata("change label",
+					fmt.Sprintf("%s %+d (%s)", label, approvalInfo.Value, approvalInfo.Name))
+			}
+		}
+	}
+
+	req.AddResponseMetadata("revision created", rev.Created.Time().String())
+
+	if rev.Uploader != nil {
+		req.AddResponseMetadata("revision uploader",
+			fmt.Sprintf("%s <%s>", rev.Uploader.Name, rev.Uploader.Email))
+	}
+
 	link, err := buildRevisionLink(src, change.ChangeNumber, rev.PatchSetNumber)
 	if err == nil {
-		req.AddResponseMetadata("link", link)
+		req.AddResponseMetadata("revision link", link)
 	} else {
 		log.Printf("error building revision link: %v", err)
+	}
+
+	req.AddResponseMetadata("commit id", ver.Revision)
+
+	if rev.Commit != nil {
+		req.AddResponseMetadata("commit author",
+			fmt.Sprintf("%s <%s>", rev.Commit.Author.Name, rev.Commit.Author.Email))
+
+		req.AddResponseMetadata("commit subject", rev.Commit.Subject)
+
+		for _, parent := range rev.Commit.Parents {
+			req.AddResponseMetadata("commit parent", parent.CommitID)
+		}
+
+		req.AddResponseMetadata("commit message", rev.Commit.Message)
 	}
 
 	// Write gerrit_version.json
