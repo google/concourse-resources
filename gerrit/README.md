@@ -1,6 +1,6 @@
 # [Gerrit](https://www.gerritcodereview.com/) Resource for [Concourse](https://concourse.ci/)
 
-[![Build Status](https://travis-ci.org/google/concourse-gerrit.svg?branch=master)](https://travis-ci.org/google/concourse-gerrit)
+[![Build Status](https://travis-ci.org/google/concourse-resources.svg?branch=master)](https://travis-ci.org/google/concourse-resources)
 
 Tracks Gerrit change revisions (patch sets).
 
@@ -16,7 +16,7 @@ resource_types:
 - name: gerrit
   type: docker-image
   source:
-    repository: us.gcr.io/concourse-gerrit/resource
+    repository: us.gcr.io/concourse-resources/gerrit-resource
 ```
 
 ## Source Configuration
@@ -80,7 +80,7 @@ resource_types:
 - name: gerrit
   type: docker-image
   source:
-    repository: us.gcr.io/concourse-gerrit/resource
+    repository: us.gcr.io/concourse-resources/gerrit-resource
 
 resources:
 - name: example-gerrit
