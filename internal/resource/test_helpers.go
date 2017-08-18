@@ -39,7 +39,12 @@ func testRunner(t *testing.T, runner interface{}, req interface{}, resp interfac
 	requestBuf := new(bytes.Buffer)
 	assert.NoError(t, json.NewEncoder(requestBuf).Encode(req))
 
+	if t.Failed() {
+		t.FailNow()
+	}
+
 	responseBuf := new(bytes.Buffer)
+
 	argVals := []reflect.Value{
 		reflect.ValueOf(requestBuf),
 		reflect.ValueOf(responseBuf),
@@ -47,11 +52,19 @@ func testRunner(t *testing.T, runner interface{}, req interface{}, resp interfac
 	for _, arg := range args {
 		argVals = append(argVals, reflect.ValueOf(arg))
 	}
+
 	results := reflect.ValueOf(runner).Call(argVals)
+
+	if t.Failed() {
+		t.FailNow()
+	}
+
 	if resp != nil {
 		assert.NoError(t, json.NewDecoder(responseBuf).Decode(resp))
 	}
+
 	assert.Len(t, results, 1)
+
 	if results[0].IsNil() {
 		return nil
 	} else {
