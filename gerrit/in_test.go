@@ -149,7 +149,7 @@ func TestInGitCookies(t *testing.T) {
 }
 
 func TestInGerritVersionFile(t *testing.T) {
-	testIn(t, Source{}, testInVersion, inParams{})
+	testIn(t, Source{Cookies: "auth cookie"}, testInVersion, inParams{})
 
 	var ver Version
 	versionPath := filepath.Join(testInDestDir, gerritVersionFilename)

@@ -28,9 +28,12 @@ resource_types:
   `status:open project:my-project`. See Gerrit documentation on
   [Searching Changes](https://gerrit-documentation.storage.googleapis.com/Documentation/2.14.2/user-search.html).
 
-* `cookies`: A string containing cookies in "Netscape cookie file format" (as
+* `cookies`: (optional) A string containing cookies in "Netscape cookie file format" (as
   supported by libcurl) to be used when connecting to Gerrit. Usually used for
   authentication.
+
+* `username`: (optional) An username used when connecting to Gerrit - used in case you cannot authenticate with a cookie
+* `password`: (optional) A password for given `username` used when connecting to Gerrit - used in case you cannot authenticate with a cookie
 
 ## Behavior
 
@@ -74,7 +77,7 @@ The given revision is updated with the given message and/or label(s).
   `{Verified: 1}`.
 
 ## Example Pipeline
-
+* Cookies based authentication
 ``` yaml
 resource_types:
 - name: gerrit
@@ -89,6 +92,40 @@ resources:
     url: https://review.example.com
     query: status:open project:example
     cookies: ((gerrit-cookies))
+
+jobs:
+- name: example-ci
+  plan:
+  # Trigger this job for every new patch set
+  - get: example-gerrit
+    version: every
+    trigger: true
+
+  - task: example-ci
+    file: example-gerrit/ci.yml
+
+  # After a successfuly build, mark the patch set Verified +1
+  - put: example-gerrit
+    message: CI passed!
+    labels: {Verified: 1}
+```
+
+* Credentials based authentication
+``` yaml
+resource_types:
+- name: gerrit
+  type: docker-image
+  source:
+    repository: us.gcr.io/concourse-resources/gerrit-resource
+
+resources:
+- name: example-gerrit
+  type: gerrit
+  source:
+    url: https://review.example.com
+    query: status:open project:example
+    username: ((gerrit-username))
+    password: ((gerrit-password))
 
 jobs:
 - name: example-ci

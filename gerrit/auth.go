@@ -26,18 +26,45 @@ var (
 	cookiesTempDir = ""
 )
 
-type authManager struct {
+type credentialsAuth struct {
+	username	string
+	password	string
+}
+
+type cookiesAuth struct {
 	cookies      string
 	cookiesPath_ string
 }
 
-func newAuthManager(source Source) *authManager {
-	return &authManager{
-		cookies: source.Cookies,
-	}
+type AuthManager interface {
+	GerritAuth() (gerrit.Auth, error)
+	GitConfigArgs() ([]string, error)
+	Anonymous() bool
+	Cleanup()
 }
 
-func (r *authManager) cookiesPath() (string, error) {
+func NewAuthManager(source Source) AuthManager {
+	return newAuthManager(source, newCookieAuth, newCredentialsAuth, newAnonymousAuth)
+}
+
+func newCookieAuth(source *Source) AuthManager { return &cookiesAuth{cookies: source.Cookies } }
+
+func newAnonymousAuth(_ *Source) AuthManager { return &cookiesAuth{} }
+
+func newCredentialsAuth(source * Source) AuthManager { return &credentialsAuth{username: source.Username, password: source.Password } }
+
+type authManagerCreator func(source *Source) AuthManager
+
+func newAuthManager(source Source, authManagers ...authManagerCreator) AuthManager {
+	var authManager AuthManager
+	for _, creatorFunc := range authManagers {
+		authManager = creatorFunc(&source)
+		if !authManager.Anonymous() { break }
+	}
+	return authManager
+}
+
+func (r *cookiesAuth) cookiesPath() (string, error) {
 	if r.cookies == "" {
 		return "", nil
 	}
@@ -56,7 +83,7 @@ func (r *authManager) cookiesPath() (string, error) {
 	return r.cookiesPath_, nil
 }
 
-func (r *authManager) gerritAuth() (gerrit.Auth, error) {
+func (r *cookiesAuth) GerritAuth() (gerrit.Auth, error) {
 	if r.cookies != "" {
 		cookiesPath, err := r.cookiesPath()
 		if err != nil {
@@ -68,7 +95,7 @@ func (r *authManager) gerritAuth() (gerrit.Auth, error) {
 	}
 }
 
-func (r *authManager) gitConfigArgs() ([]string, error) {
+func (r *cookiesAuth) GitConfigArgs() ([]string, error) {
 	cookiesPath, err := r.cookiesPath()
 	if err != nil {
 		return []string{}, err
@@ -76,11 +103,11 @@ func (r *authManager) gitConfigArgs() ([]string, error) {
 	return []string{"config", "http.cookieFile", cookiesPath}, nil
 }
 
-func (r *authManager) anonymous() bool {
+func (r *cookiesAuth) Anonymous() bool {
 	return r.cookies == ""
 }
 
-func (r *authManager) cleanup() {
+func (r *cookiesAuth) Cleanup() {
 	if r.cookiesPath_ != "" {
 		err := os.Remove(r.cookiesPath_)
 		if err != nil {
@@ -89,3 +116,17 @@ func (r *authManager) cleanup() {
 		r.cookiesPath_ = ""
 	}
 }
+
+func (r *credentialsAuth) GerritAuth() (gerrit.Auth, error) {
+	return gerrit.BasicAuth(r.username, r.password), nil
+}
+
+func (r *credentialsAuth) GitConfigArgs() ([]string, error) {
+	return []string{}, nil
+}
+
+func (r *credentialsAuth) Anonymous() bool {
+	return r.username == ""
+}
+
+func (r *credentialsAuth) Cleanup() { }
