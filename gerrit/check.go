@@ -51,8 +51,8 @@ func check(req resource.CheckRequest) error {
 		return err
 	}
 
-	authMan := newAuthManager(src)
-	defer authMan.cleanup()
+	authMan := NewAuthManager(src)
+	defer authMan.Cleanup()
 
 	c, err := gerritClient(src, authMan)
 	if err != nil {

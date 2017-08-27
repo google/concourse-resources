@@ -46,8 +46,8 @@ func out(req resource.OutRequest) error {
 		return err
 	}
 
-	authMan := newAuthManager(src)
-	defer authMan.cleanup()
+	authMan := NewAuthManager(src)
+	defer authMan.Cleanup()
 
 	// Read gerrit_version.json
 	var ver Version

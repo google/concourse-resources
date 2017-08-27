@@ -20,11 +20,11 @@ import (
 	"golang.org/x/build/gerrit"
 )
 
-func gerritClient(src Source, authMan *authManager) (*gerrit.Client, error) {
+func gerritClient(src Source, authMan AuthManager) (*gerrit.Client, error) {
 	if src.Url == "" {
 		return nil, fmt.Errorf("source url is required")
 	}
-	auth, err := authMan.gerritAuth()
+	auth, err := authMan.GerritAuth()
 	if err != nil {
 		return nil, err
 	}

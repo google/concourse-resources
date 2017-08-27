@@ -58,8 +58,8 @@ func in(req resource.InRequest) error {
 		return err
 	}
 
-	authMan := newAuthManager(src)
-	defer authMan.cleanup()
+	authMan := NewAuthManager(src)
+	defer authMan.Cleanup()
 
 	c, err := gerritClient(src, authMan)
 	if err != nil {
@@ -89,7 +89,7 @@ func in(req resource.InRequest) error {
 		return err
 	}
 
-	configArgs, err := authMan.gitConfigArgs()
+	configArgs, err := authMan.GitConfigArgs()
 	if err != nil {
 		return fmt.Errorf("error getting git config args: %v", err)
 	}
