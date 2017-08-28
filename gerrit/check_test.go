@@ -46,6 +46,13 @@ func TestCheckSourceCookies(t *testing.T) {
 	assert.Equal(t, "bar", cookie.Value)
 }
 
+func TestCheckSourceUsernamePassword(t *testing.T) {
+	testCheck(t, Source{Username: "bob", Password: "dog"}, Version{})
+	assert.True(t, testGerritLastAuthenticated)
+	authHeader := testGerritLastRequest.Header.Get("authorization")
+	assert.Equal(t, authHeader, "Basic Ym9iOmRvZw==") // == Base64("bob:dog")
+}
+
 func TestCheckWithoutVersion(t *testing.T) {
 	versions := testCheck(t, Source{}, Version{})
 	assert.Equal(t, "status:open", testGerritLastQ)

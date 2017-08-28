@@ -76,7 +76,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	cookiesTempDir = testTempDir
+	authTempDir = testTempDir
 	updateStampTempDir = testTempDir
 
 	testServer := httptest.NewServer(http.HandlerFunc(testGerritHandler))

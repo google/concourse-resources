@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -133,9 +135,7 @@ func TestInGitCookies(t *testing.T) {
 		var err error
 		cookiesPath = args[idx+1]
 		cookiesFileData, err = ioutil.ReadFile(cookiesPath)
-		if err != nil {
-			panic(err)
-		}
+		assert.NoError(t, err)
 	})
 
 	cookies := "localhost\tFALSE\t/\tFALSE\t9999999999\tfoo\tbar\n"
@@ -144,8 +144,31 @@ func TestInGitCookies(t *testing.T) {
 
 	// Cookie file should be deleted
 	_, err := os.Stat(cookiesPath)
-	assert.Error(t, err)
-	assert.True(t, os.IsNotExist(err))
+	assert.True(t, os.IsNotExist(err), "%s wasn't deleted", cookiesPath)
+}
+
+func TestInGitUsernamePassword(t *testing.T) {
+	var credsPath string
+	var credsOutput []byte
+	mockGitWithArg("credential.helper", func(args []string, idx int) {
+		var err error
+		credHelper := args[idx+1]
+		credsPath = credHelper[strings.LastIndex(credHelper, " ")+1:]
+		credsOutput, err = exec.Command("sh", "-c", credHelper[1:]).CombinedOutput()
+		assert.NoError(t, err, string(credsOutput))
+
+		// Confirm credsPath exists right now.
+		_, err = os.Stat(credsPath)
+		assert.NoError(t, err)
+	})
+
+	password := `$(${'"\'\"` + "`"
+	testIn(t, Source{Username: "bob", Password: password}, testInVersion, inParams{})
+	assert.Equal(t, fmt.Sprintf("username=bob\npassword=%s\n", password), string(credsOutput))
+
+	// Creds file should be deleted
+	_, err := os.Stat(credsPath)
+	assert.True(t, os.IsNotExist(err), "%s wasn't deleted", credsPath)
 }
 
 func TestInGerritVersionFile(t *testing.T) {

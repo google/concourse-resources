@@ -28,9 +28,13 @@ resource_types:
   `status:open project:my-project`. See Gerrit documentation on
   [Searching Changes](https://gerrit-documentation.storage.googleapis.com/Documentation/2.14.2/user-search.html).
 
-* `cookies`: A string containing cookies in "Netscape cookie file format" (as
-  supported by libcurl) to be used when connecting to Gerrit. Usually used for
-  authentication.
+* `cookies`: (optional) A string containing cookies in "Netscape cookie file
+  format" (as supported by libcurl) to be used when connecting to Gerrit.
+  Usually used for authentication.
+
+* `username`: (optional) A username for HTTP Basic authentication to Gerrit.
+
+* `password`: (optional) A password for HTTP Basic authentication to Gerrit.
 
 ## Behavior
 
