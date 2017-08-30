@@ -71,32 +71,33 @@ type testResourceResponse struct {
 }
 
 func TestMain(m *testing.M) {
-	var err error
-	testTempDir, err = ioutil.TempDir("", "concourse-gerrit-test")
-	if err != nil {
-		panic(err)
-	}
-	cookiesTempDir = testTempDir
-	updateStampTempDir = testTempDir
+	// Run a separate func so defers run before Exit.
+	os.Exit(func() int {
+		var err error
+		testTempDir, err = ioutil.TempDir("", "concourse-gerrit-test")
+		if err != nil {
+			panic(err)
+		}
+		defer os.RemoveAll(testTempDir)
+		cookiesTempDir = testTempDir
+		updateStampTempDir = testTempDir
 
-	testServer := httptest.NewServer(http.HandlerFunc(testGerritHandler))
-	testGerritUrl = testServer.URL
+		testServer := httptest.NewServer(http.HandlerFunc(testGerritHandler))
+		defer testServer.Close()
+		testGerritUrl = testServer.URL
 
-	// Replace IP in test URL with "localhost" (if equivalent) so cookies work.
-	localhostIp, err := net.ResolveIPAddr("ip4", "localhost")
-	if err == nil && strings.Contains(testGerritUrl, localhostIp.String()) {
-		testGerritUrl = strings.Replace(
-			testGerritUrl, localhostIp.String(), "localhost", 1)
-	}
+		// Replace IP in test URL with "localhost" (if equivalent) so cookies work.
+		localhostIp, err := net.ResolveIPAddr("ip4", "localhost")
+		if err == nil && strings.Contains(testGerritUrl, localhostIp.String()) {
+			testGerritUrl = strings.Replace(
+				testGerritUrl, localhostIp.String(), "localhost", 1)
+		}
 
-	// Mock out git execution
-	execGit = testExecGit
+		// Mock out git execution
+		execGit = testExecGit
 
-	ret := m.Run()
-
-	testServer.Close()
-	os.RemoveAll(testTempDir)
-	os.Exit(ret)
+		return m.Run()
+	}())
 }
 
 func testExecGit(_ ...string) ([]byte, error) {
@@ -139,7 +140,7 @@ func testBuildChange(testNumber int, revisionCount int) gerrit.ChangeInfo {
 			},
 			Commit: &gerrit.CommitInfo{
 				Author: gerrit.GitPersonInfo{
-					Name: testName,
+					Name:  testName,
 					Email: testEmail,
 				},
 				Subject: testSubject,
