@@ -57,6 +57,8 @@ var (
 	testGerritLastChangeId      string
 	testGerritLastRevision      string
 	testGerritLastReviewInput   *gerrit.ReviewInput
+
+	testGitMocks = make(map[string][]func([]string, int))
 )
 
 type testRequest struct {
@@ -100,8 +102,22 @@ func TestMain(m *testing.M) {
 	}())
 }
 
-func testExecGit(_ ...string) ([]byte, error) {
+func testExecGit(args ...string) ([]byte, error) {
+	for i := 0; i < len(args); i++ {
+		mockFuncs, ok := testGitMocks[args[i]]
+		if ok {
+			for _, mockFunc := range mockFuncs {
+				mockFunc(args, i)
+			}
+			delete(testGitMocks, args[i])
+			break
+		}
+	}
 	return []byte{}, nil
+}
+
+func mockGitWithArg(arg string, f func([]string, int)) {
+	testGitMocks[arg] = append(testGitMocks[arg], f)
 }
 
 func testBuildChange(testNumber int, revisionCount int) gerrit.ChangeInfo {

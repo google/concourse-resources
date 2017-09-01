@@ -57,6 +57,7 @@ func in(req resource.InRequest) error {
 	if err != nil {
 		return err
 	}
+	dir := req.TargetDir()
 
 	authMan := newAuthManager(src)
 	defer authMan.cleanup()
@@ -74,17 +75,17 @@ func in(req resource.InRequest) error {
 		return err
 	}
 
-	fetchArgs, err := resolveFetchArgs(params, rev)
+	fetchUrl, fetchRef, err := resolveFetchUrlRef(params, rev)
 	if err != nil {
 		return fmt.Errorf("could not resolve fetch args for change %q: %v", change.ID, err)
 	}
 
 	// Prepare destination repo and checkout requested revision
-	err = git(req.TargetDir(), "init")
+	err = git(dir, "init")
 	if err != nil {
 		return err
 	}
-	err = git(req.TargetDir(), "config", "color.ui", "always")
+	err = git(dir, "config", "color.ui", "always")
 	if err != nil {
 		return err
 	}
@@ -100,11 +101,22 @@ func in(req resource.InRequest) error {
 		}
 	}
 
-	err = git(req.TargetDir(), fetchArgs...)
+	err = git(dir, "remote", "add", "origin", fetchUrl)
 	if err != nil {
 		return err
 	}
-	err = git(req.TargetDir(), "checkout", "FETCH_HEAD")
+
+	err = git(dir, "fetch", "origin", fetchRef)
+	if err != nil {
+		return err
+	}
+
+	err = git(dir, "checkout", "FETCH_HEAD")
+	if err != nil {
+		return err
+	}
+
+	err = git(dir, "submodule", "update", "--init", "--recursive")
 	if err != nil {
 		return err
 	}
@@ -158,14 +170,14 @@ func in(req resource.InRequest) error {
 	}
 
 	// Write gerrit_version.json
-	gerritVersionPath := filepath.Join(req.TargetDir(), gerritVersionFilename)
+	gerritVersionPath := filepath.Join(dir, gerritVersionFilename)
 	err = ver.WriteToFile(gerritVersionPath)
 	if err != nil {
 		return fmt.Errorf("error writing %q: %v", gerritVersionPath, err)
 	}
 
 	// Ignore gerrit_version.json file in repo
-	excludePath := filepath.Join(req.TargetDir(), ".git", "info", "exclude")
+	excludePath := filepath.Join(dir, ".git", "info", "exclude")
 	excludeErr := os.MkdirAll(filepath.Dir(excludePath), 0755)
 	if excludeErr == nil {
 		f, excludeErr := os.OpenFile(excludePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -181,10 +193,10 @@ func in(req resource.InRequest) error {
 	return nil
 }
 
-func resolveFetchArgs(params inParams, rev *gerrit.RevisionInfo) ([]string, error) {
-	fetchUrl := params.FetchUrl
-	fetchRef := rev.Ref
-	if fetchUrl == "" {
+func resolveFetchUrlRef(params inParams, rev *gerrit.RevisionInfo) (url, ref string, err error) {
+	url = params.FetchUrl
+	ref = rev.Ref
+	if url == "" {
 		fetchProtocol := params.FetchProtocol
 		if fetchProtocol == "" {
 			for _, proto := range defaultFetchProtocols {
@@ -196,13 +208,13 @@ func resolveFetchArgs(params inParams, rev *gerrit.RevisionInfo) ([]string, erro
 		}
 		fetchInfo, ok := rev.Fetch[fetchProtocol]
 		if ok {
-			fetchUrl = fetchInfo.URL
-			fetchRef = fetchInfo.Ref
+			url = fetchInfo.URL
+			ref = fetchInfo.Ref
 		} else {
-			return []string{}, fmt.Errorf("no fetch info for protocol %q", fetchProtocol)
+			err = fmt.Errorf("no fetch info for protocol %q", fetchProtocol)
 		}
 	}
-	return []string{"fetch", fetchUrl, fetchRef}, nil
+	return
 }
 
 func git(dir string, args ...string) error {

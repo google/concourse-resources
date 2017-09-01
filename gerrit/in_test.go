@@ -55,19 +55,6 @@ func testIn(t *testing.T, src Source, ver Version, params inParams) (Version, []
 	return resp.Version, resp.Metadata
 }
 
-func mockGitWithArg(arg string, f func(args []string, idx int)) {
-	execGit = func(args ...string) ([]byte, error) {
-		for i := 0; i < len(args); i++ {
-			if args[i] == arg {
-				f(args, i)
-				execGit = testExecGit
-				break
-			}
-		}
-		return []byte{}, nil
-	}
-}
-
 func TestInResponse(t *testing.T) {
 	ver, metadata := testIn(t, Source{}, testInVersion, inParams{})
 	assert.True(t, testInVersion.Equal(ver), "%v != %v", testInVersion, ver)
@@ -97,8 +84,11 @@ func TestInGitInit(t *testing.T) {
 
 func TestInGitFetch(t *testing.T) {
 	var fetchUrl, fetchRef string
+	mockGitWithArg("remote", func(args []string, idx int) {
+		fetchUrl = args[idx+3]
+	})
 	mockGitWithArg("fetch", func(args []string, idx int) {
-		fetchUrl, fetchRef = args[idx+1], args[idx+2]
+		fetchRef = args[idx+2]
 	})
 
 	testIn(t, Source{}, testInVersion, inParams{})
@@ -108,8 +98,11 @@ func TestInGitFetch(t *testing.T) {
 
 func TestInGitFetchProtocol(t *testing.T) {
 	var fetchUrl, fetchRef string
+	mockGitWithArg("remote", func(args []string, idx int) {
+		fetchUrl = args[idx+3]
+	})
 	mockGitWithArg("fetch", func(args []string, idx int) {
-		fetchUrl, fetchRef = args[idx+1], args[idx+2]
+		fetchRef = args[idx+2]
 	})
 
 	testIn(t, Source{}, testInVersion, inParams{FetchProtocol: "fake"})
@@ -119,8 +112,11 @@ func TestInGitFetchProtocol(t *testing.T) {
 
 func TestInGitFetchUrl(t *testing.T) {
 	var fetchUrl, fetchRef string
+	mockGitWithArg("remote", func(args []string, idx int) {
+		fetchUrl = args[idx+3]
+	})
 	mockGitWithArg("fetch", func(args []string, idx int) {
-		fetchUrl, fetchRef = args[idx+1], args[idx+2]
+		fetchRef = args[idx+2]
 	})
 
 	testIn(t, Source{}, testInVersion, inParams{FetchUrl: "some://otherurl"})
