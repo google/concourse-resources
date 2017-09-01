@@ -138,7 +138,7 @@ func TestInGitCookies(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	cookies := "localhost\tFALSE\t/\tFALSE\t9999999999\tfoo\tbar\n"
+	cookies := "localhost\tFALSE\t/\tFALSE\t9999999999\tauth\tbar\n"
 	testIn(t, Source{Cookies: cookies}, testInVersion, inParams{})
 	assert.Equal(t, cookies, string(cookiesFileData))
 

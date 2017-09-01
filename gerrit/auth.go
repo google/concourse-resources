@@ -35,6 +35,7 @@ type authManager struct {
 
 	username   string
 	password   string
+	digest     bool
 	credsPath_ string
 }
 
@@ -43,6 +44,7 @@ func newAuthManager(source Source) *authManager {
 		cookies:  source.Cookies,
 		username: source.Username,
 		password: source.Password,
+		digest:   source.DigestAuth,
 	}
 }
 
@@ -79,7 +81,11 @@ func (am *authManager) credsPath() (string, error) {
 
 func (am *authManager) gerritAuth() (gerrit.Auth, error) {
 	if am.username != "" {
-		return gerrit.BasicAuth(am.username, am.password), nil
+		if am.digest {
+			return gerrit.DigestAuth(am.username, am.password), nil
+		} else {
+			return gerrit.BasicAuth(am.username, am.password), nil
+		}
 	} else if am.cookies != "" {
 		cookiesPath, err := am.cookiesPath()
 		if err != nil {
