@@ -41,4 +41,4 @@ image-push: image
 	gcloud docker -- push ${IMAGE_TAG}
 
 image-run: image
-	docker run -it ${IMAGE_TAG} /bin/bash
+	docker run --rm -it ${IMAGE_TAG} /bin/sh
