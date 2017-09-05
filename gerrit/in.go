@@ -93,9 +93,11 @@ func in(req resource.InRequest) error {
 	if err != nil {
 		return fmt.Errorf("error getting git config args: %v", err)
 	}
-	err = git(req.TargetDir(), configArgs...)
-	if err != nil {
-		return err
+	for key, value := range configArgs {
+		err = git(req.TargetDir(), "config", key, value)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = git(req.TargetDir(), fetchArgs...)

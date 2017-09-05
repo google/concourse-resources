@@ -29,8 +29,14 @@ resource_types:
   [Searching Changes](https://gerrit-documentation.storage.googleapis.com/Documentation/2.14.2/user-search.html).
 
 * `cookies`: A string containing cookies in "Netscape cookie file format" (as
-  supported by libcurl) to be used when connecting to Gerrit. Usually used for
+  supported by libcurl) to be used when connecting to Gerrit.  Usually used for
   authentication.
+
+* `username`: A username for HTTP Basic authentication to Gerrit.
+
+* `password`: A password for HTTP Basic authentication to Gerrit.
+
+* `digest_auth`: If `true`, use HTTP Digest auth instead of Basic auth.
 
 ## Behavior
 

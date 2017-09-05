@@ -38,12 +38,26 @@ func TestCheckSourceQuery(t *testing.T) {
 }
 
 func TestCheckSourceCookies(t *testing.T) {
-	cookies := "localhost\tFALSE\t/\tFALSE\t9999999999\tfoo\tbar\n"
+	cookies := "localhost\tFALSE\t/\tFALSE\t9999999999\tauth\tbar\n"
 	testCheck(t, Source{Cookies: cookies}, Version{})
 	assert.True(t, testGerritLastAuthenticated)
-	cookie, err := testGerritLastRequest.Cookie("foo")
+	cookie, err := testGerritLastRequest.Cookie("auth")
 	assert.NoError(t, err)
 	assert.Equal(t, "bar", cookie.Value)
+}
+
+func TestCheckSourceUsernamePassword(t *testing.T) {
+	testCheck(t, Source{Username: "bob", Password: "dog"}, Version{})
+	assert.True(t, testGerritLastAuthenticated)
+	authHeader := testGerritLastRequest.Header.Get("authorization")
+	assert.Equal(t, "Basic Ym9iOmRvZw==", authHeader) // == Base64("bob:dog")
+}
+
+func TestCheckSourceDigestAuth(t *testing.T) {
+	testCheck(t, Source{Username: "bob", Password: "dog", DigestAuth: true}, Version{})
+	assert.True(t, testGerritLastAuthenticated)
+	authHeader := testGerritLastRequest.Header.Get("authorization")
+	assert.Contains(t, authHeader, "Digest ")
 }
 
 func TestCheckWithoutVersion(t *testing.T) {

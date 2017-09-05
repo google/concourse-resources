@@ -25,9 +25,12 @@ const (
 )
 
 type Source struct {
-	Url     string `json:"url"`
-	Query   string `json:"query"`
-	Cookies string `json:"cookies"`
+	Url        string `json:"url"`
+	Query      string `json:"query"`
+	Cookies    string `json:"cookies"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	DigestAuth bool   `json:"digest_auth"`
 }
 
 type Version struct {

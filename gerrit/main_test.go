@@ -79,7 +79,7 @@ func TestMain(m *testing.M) {
 			panic(err)
 		}
 		defer os.RemoveAll(testTempDir)
-		cookiesTempDir = testTempDir
+		authTempDir = testTempDir
 		updateStampTempDir = testTempDir
 
 		testServer := httptest.NewServer(http.HandlerFunc(testGerritHandler))
@@ -181,6 +181,16 @@ func testGerritHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	testGerritLastAuthenticated = strings.HasPrefix(r.URL.Path, "/a")
+
+	if testGerritLastAuthenticated {
+		authCookie, _ := r.Cookie("auth")
+		if r.Header.Get("Authorization") == "" && authCookie == nil {
+			w.Header().Add("WWW-Authenticate", `Digest realm="Gerrit", nonce="foobar"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
+
 	path := strings.TrimPrefix(r.URL.Path, "/a")
 	pathParts := strings.Split(path, "/")
 
