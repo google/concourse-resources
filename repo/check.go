@@ -42,6 +42,8 @@ func check(req resource.CheckRequest) error {
 
 		err = repoInit(checkRepoDir, src)
 		if err != nil {
+			// Clean up the repo dir so we can try init again later
+			os.RemoveAll(checkRepoDir)
 			return err
 		}
 	} else if err != nil {
