@@ -53,6 +53,26 @@ func testIn(t *testing.T, src Source, ver Version) (Version, []resource.Metadata
 	return resp.Version, resp.Metadata
 }
 
+func TestInGitCookies(t *testing.T) {
+	var cookieFileContents []byte
+	execGit = func(args ...string) ([]byte, error) {
+		t.Log(args)
+		for i := range args {
+			if args[i] == "http.cookiefile" && len(args) > i+1 && args[i+1] != "" {
+				var err error
+				cookieFileContents, err = ioutil.ReadFile(args[i+1])
+				assert.NoError(t, err)
+			}
+		}
+		return nil, nil
+	}
+	defer func() { execGit = testExecGit }()
+
+	cookies := "example.com foo=bar"
+	testIn(t, Source{GitCookies: cookies}, Version{})
+	assert.EqualValues(t, cookies, cookieFileContents)
+}
+
 func TestInVersion(t *testing.T) {
 	ver := Version{Manifest: "<xml>"}
 	outVer, _ := testIn(t, Source{}, ver)

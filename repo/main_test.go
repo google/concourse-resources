@@ -38,6 +38,8 @@ func TestMain(m *testing.M) {
 	os.Exit(func() int {
 		testingRepo = true
 
+		execGit = testExecGit
+
 		var err error
 		testTempDir, err = ioutil.TempDir("", "concourse-repo-test")
 		if err != nil {
@@ -47,4 +49,8 @@ func TestMain(m *testing.M) {
 
 		return m.Run()
 	}())
+}
+
+func testExecGit(_ ...string) ([]byte, error) {
+	return nil, nil
 }

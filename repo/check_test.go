@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -60,6 +61,26 @@ func TestCheckVersions(t *testing.T) {
 	// Request other version, get other and current versions
 	versions = testCheck(t, Source{}, otherVersion)
 	assert.Equal(t, []Version{otherVersion, testCurrentVersion}, versions)
+}
+
+func TestCheckGitCookies(t *testing.T) {
+	var cookieFileContents []byte
+	execGit = func(args ...string) ([]byte, error) {
+		t.Log(args)
+		for i := range args {
+			if args[i] == "http.cookiefile" && len(args) > i+1 && args[i+1] != "" {
+				var err error
+				cookieFileContents, err = ioutil.ReadFile(args[i+1])
+				assert.NoError(t, err)
+			}
+		}
+		return nil, nil
+	}
+	defer func() { execGit = testExecGit }()
+
+	cookies := "example.com foo=bar"
+	testCheck(t, Source{GitCookies: cookies}, Version{})
+	assert.EqualValues(t, cookies, cookieFileContents)
 }
 
 func TestCheckRepoInit(t *testing.T) {

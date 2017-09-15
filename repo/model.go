@@ -30,6 +30,9 @@ type Source struct {
 
 	// Sync options
 	SyncOptions options `json:"sync_options"`
+
+	// Git options
+	GitCookies string `json:"git_cookies"`
 }
 
 type Version struct {

@@ -31,6 +31,16 @@ func in(req resource.InRequest) error {
 		return err
 	}
 
+	if src.GitCookies != "" {
+		gitConfigMan := gitConfigManager{}
+		defer gitConfigMan.cleanup()
+
+		err = gitConfigMan.setFileContents("http.cookiefile", src.GitCookies)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = repoInit(req.TargetDir(), src)
 	if err != nil {
 		return err

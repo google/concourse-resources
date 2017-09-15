@@ -32,6 +32,16 @@ func check(req resource.CheckRequest) error {
 		return err
 	}
 
+	if src.GitCookies != "" {
+		gitConfigMan := gitConfigManager{}
+		defer gitConfigMan.cleanup()
+
+		err = gitConfigMan.setFileContents("http.cookiefile", src.GitCookies)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Create and init repo if it doesn't exist.
 	_, err = os.Stat(checkRepoDir)
 	if os.IsNotExist(err) {

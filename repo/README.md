@@ -41,6 +41,10 @@ resource_types:
   *Be careful! This is an advanced feature that can break the resource!*
   (See: `repo init --help` and `repo sync --help`.)
 
+* `git_cookies`: A string containing cookies in "Netscape cookie file format"
+  (as supported by libcurl) to be used for git connections. Usually used for
+  authentication. (See: `http.cookieFile` in `git config --help`.)
+
 ## Behavior
 
 ### `check`: Check for new revisions.
