@@ -17,12 +17,11 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
 	"strings"
 
 	"golang.org/x/build/gerrit"
+
+	"github.com/google/concourse-resources/internal/temputil"
 )
 
 var (
@@ -30,6 +29,8 @@ var (
 )
 
 type authManager struct {
+	tempFileMan temputil.TempFileManager
+
 	cookies      string
 	cookiesPath_ string
 
@@ -41,6 +42,7 @@ type authManager struct {
 
 func newAuthManager(source Source) *authManager {
 	return &authManager{
+		tempFileMan: temputil.TempFileManager{TempDir: authTempDir},
 		cookies:  source.Cookies,
 		username: source.Username,
 		password: source.Password,
@@ -54,7 +56,7 @@ func (am *authManager) cookiesPath() (string, error) {
 	}
 	var err error
 	if am.cookiesPath_ == "" {
-		am.cookiesPath_, err = writeAuthTempFile(
+		am.cookiesPath_, err = am.tempFileMan.Create(
 			"concourse-gerrit-cookies", am.cookies)
 	}
 	return am.cookiesPath_, err
@@ -72,7 +74,7 @@ func (am *authManager) credsPath() (string, error) {
 			strings.ContainsAny(am.password, "\x00\n") {
 			return "", errors.New("invalid character in username or password")
 		}
-		am.credsPath_, err = writeAuthTempFile(
+		am.credsPath_, err = am.tempFileMan.Create(
 			"concourse-gerrit-creds",
 			fmt.Sprintf("username=%s\npassword=%s\n", am.username, am.password))
 	}
@@ -121,35 +123,5 @@ func (am *authManager) gitConfigArgs() (map[string]string, error) {
 }
 
 func (am *authManager) cleanup() {
-	for _, path := range []*string{&am.cookiesPath_, &am.credsPath_} {
-		if *path != "" {
-			err := os.Remove(*path)
-			if err != nil {
-				log.Printf("error removing auth temp file %q: %s", *path, err)
-			}
-			*path = ""
-		}
-	}
-	if am.cookiesPath_ != "" {
-		err := os.Remove(am.cookiesPath_)
-		if err != nil {
-			log.Printf("error removing cookies file: %s", err)
-		}
-		am.cookiesPath_ = ""
-	}
-}
-
-func writeAuthTempFile(suffix string, contents string) (string, error) {
-	f, err := ioutil.TempFile(authTempDir, suffix)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	_, err = f.WriteString(contents)
-	if err != nil {
-		return f.Name(), err
-	}
-
-	return f.Name(), nil
+	am.tempFileMan.Cleanup()
 }
