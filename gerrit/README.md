@@ -110,6 +110,7 @@ jobs:
   # After a successfuly build, mark the patch set Verified +1
   - put: example-gerrit
     params:
+      repository: example-gerrit
       message: CI passed!
       labels: {Verified: 1}
 ```
