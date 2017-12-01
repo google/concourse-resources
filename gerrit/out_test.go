@@ -16,6 +16,7 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -61,6 +62,78 @@ func TestOutVersion(t *testing.T) {
 func TestOutMessage(t *testing.T) {
 	testOut(t, Source{}, outParams{Message: "foo bar"})
 	assert.Equal(t, "foo bar", testGerritLastReviewInput.Message)
+}
+
+func TestOutMessageWithBuildId(t *testing.T) {
+	// Test Data
+	environmentValue := "1"
+	os.Setenv("BUILD_ID", environmentValue)
+
+	// Execute
+	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_ID"})
+
+	// Verify
+	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
+}
+
+func TestOutMessageWithBuildName(t *testing.T) {
+	// Test Data
+	environmentValue := "1"
+	os.Setenv("BUILD_NAME", environmentValue)
+
+	// Execute
+	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_NAME"})
+
+	// Verify
+	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
+}
+
+func TestOutMessageWithBuildJobName(t *testing.T) {
+	// Test Data
+	environmentValue := "1"
+	os.Setenv("BUILD_JOB_NAME", environmentValue)
+
+	// Execute
+	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_JOB_NAME"})
+
+	// Verify
+	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
+}
+
+func TestOutMessageWithBuildPipelineName(t *testing.T) {
+	// Test Data
+	environmentValue := "1"
+	os.Setenv("BUILD_PIPELINE_NAME", environmentValue)
+
+	// Execute
+	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_PIPELINE_NAME"})
+
+	// Verify
+	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
+}
+
+func TestOutMessageWithBuildTeamName(t *testing.T) {
+	// Test Data
+	environmentValue := "1"
+	os.Setenv("BUILD_TEAM_NAME", environmentValue)
+
+	// Execute
+	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_TEAM_NAME"})
+
+	// Verify
+	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
+}
+
+func TestOutMessageWithATCExternalUrl(t *testing.T) {
+	// Test Data
+	environmentValue := "1"
+	os.Setenv("ATC_EXTERNAL_URL", environmentValue)
+
+	// Execute
+	testOut(t, Source{}, outParams{Message: "foo bar $ATC_EXTERNAL_URL"})
+
+	// Verify
+	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
 }
 
 func TestOutMessageFile(t *testing.T) {

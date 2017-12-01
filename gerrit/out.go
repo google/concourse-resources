@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/build/gerrit"
 
@@ -78,6 +80,20 @@ func out(req resource.OutRequest) error {
 				log.Printf("using fallback message %q", message)
 			}
 		}
+	}
+
+	// Replace environment variables in message
+	var variableTokens = map[string]string{
+		"$BUILD_ID":            os.Getenv("BUILD_ID"),
+		"$BUILD_NAME":          os.Getenv("BUILD_NAME"),
+		"$BUILD_JOB_NAME":      os.Getenv("BUILD_JOB_NAME"),
+		"$BUILD_PIPELINE_NAME": os.Getenv("BUILD_PIPELINE_NAME"),
+		"$BUILD_TEAM_NAME":     os.Getenv("BUILD_TEAM_NAME"),
+		"$ATC_EXTERNAL_URL":    os.Getenv("ATC_EXTERNAL_URL"),
+	}
+
+	for k, v := range variableTokens {
+		message = strings.Replace(message, k, v, -1)
 	}
 
 	// Send review
