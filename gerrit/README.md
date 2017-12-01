@@ -70,7 +70,7 @@ The given revision is updated with the given message and/or label(s).
   just the resource name.
 
 * `message`: A message to be posted as a comment on the given revision.
-  The message can contain build metadata variables. (e.g.: $BUILD_ID)
+  The message can contain build metadata variables. (e.g.: ${BUILD_ID})
   See the [Concourse.CI Metadata Documentation](https://concourse.ci/implementing-resources.html#section_resource-metadata
   for a complete list of variables.
 
@@ -78,7 +78,7 @@ The given revision is updated with the given message and/or label(s).
   on the given revision. This overrides `message` *unless* reading
   `message_file` fails, in which case `message` is used instead. If reading
   `message_file` fails and `message` is not specified then the `put` will fail.
-  The message can contain build metadata variables. (e.g.: $BUILD_ID)
+  The message can contain build metadata variables. (e.g.: ${BUILD_ID})
   See the [Concourse.CI Metadata Documentation](https://concourse.ci/implementing-resources.html#section_resource-metadata
   for a complete list of variables.
 
