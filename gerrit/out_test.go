@@ -136,6 +136,28 @@ func TestOutMessageWithATCExternalUrl(t *testing.T) {
 	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
 }
 
+func TestOutMessageWithAllVariables(t *testing.T) {
+	// Test Data
+	buildId := "1"
+	os.Setenv("BUILD_ID", buildId)
+	buildName := "2"
+	os.Setenv("BUILD_NAME", buildName)
+	buildJobName := "3"
+	os.Setenv("BUILD_JOB_NAME", buildJobName)
+	buildPipelineName := "4"
+	os.Setenv("BUILD_PIPELINE_NAME", buildPipelineName)
+	buildTeamName := "5"
+	os.Setenv("BUILD_TEAM_NAME", buildTeamName)
+	atcExternalUrl := "6"
+	os.Setenv("ATC_EXTERNAL_URL", atcExternalUrl)
+
+	// Execute
+	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_ID $BUILD_NAME $BUILD_JOB_NAME $BUILD_PIPELINE_NAME $BUILD_TEAM_NAME $ATC_EXTERNAL_URL"})
+
+	// Verify
+	assert.Equal(t, "foo bar 1 2 3 4 5 6", testGerritLastReviewInput.Message)
+
+}
 func TestOutMessageFile(t *testing.T) {
 	err := ioutil.WriteFile(
 		filepath.Join(testTempDir, "message.txt"),
