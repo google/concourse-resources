@@ -70,7 +70,7 @@ func TestOutMessageWithBuildId(t *testing.T) {
 	os.Setenv("BUILD_ID", environmentValue)
 
 	// Execute
-	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_ID"})
+	testOut(t, Source{}, outParams{Message: "foo bar ${BUILD_ID}"})
 
 	// Verify
 	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
@@ -82,7 +82,7 @@ func TestOutMessageWithBuildName(t *testing.T) {
 	os.Setenv("BUILD_NAME", environmentValue)
 
 	// Execute
-	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_NAME"})
+	testOut(t, Source{}, outParams{Message: "foo bar ${BUILD_NAME}"})
 
 	// Verify
 	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
@@ -94,7 +94,7 @@ func TestOutMessageWithBuildJobName(t *testing.T) {
 	os.Setenv("BUILD_JOB_NAME", environmentValue)
 
 	// Execute
-	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_JOB_NAME"})
+	testOut(t, Source{}, outParams{Message: "foo bar ${BUILD_JOB_NAME}"})
 
 	// Verify
 	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
@@ -106,7 +106,7 @@ func TestOutMessageWithBuildPipelineName(t *testing.T) {
 	os.Setenv("BUILD_PIPELINE_NAME", environmentValue)
 
 	// Execute
-	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_PIPELINE_NAME"})
+	testOut(t, Source{}, outParams{Message: "foo bar ${BUILD_PIPELINE_NAME}"})
 
 	// Verify
 	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
@@ -118,7 +118,7 @@ func TestOutMessageWithBuildTeamName(t *testing.T) {
 	os.Setenv("BUILD_TEAM_NAME", environmentValue)
 
 	// Execute
-	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_TEAM_NAME"})
+	testOut(t, Source{}, outParams{Message: "foo bar ${BUILD_TEAM_NAME}"})
 
 	// Verify
 	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
@@ -130,7 +130,7 @@ func TestOutMessageWithATCExternalUrl(t *testing.T) {
 	os.Setenv("ATC_EXTERNAL_URL", environmentValue)
 
 	// Execute
-	testOut(t, Source{}, outParams{Message: "foo bar $ATC_EXTERNAL_URL"})
+	testOut(t, Source{}, outParams{Message: "foo bar ${ATC_EXTERNAL_URL}"})
 
 	// Verify
 	assert.Equal(t, "foo bar 1", testGerritLastReviewInput.Message)
@@ -152,12 +152,12 @@ func TestOutMessageWithAllVariables(t *testing.T) {
 	os.Setenv("ATC_EXTERNAL_URL", atcExternalUrl)
 
 	// Execute
-	testOut(t, Source{}, outParams{Message: "foo bar $BUILD_ID $BUILD_NAME $BUILD_JOB_NAME $BUILD_PIPELINE_NAME $BUILD_TEAM_NAME $ATC_EXTERNAL_URL"})
+	testOut(t, Source{}, outParams{Message: "foo bar ${BUILD_ID} ${BUILD_NAME} ${BUILD_JOB_NAME} ${BUILD_PIPELINE_NAME} ${BUILD_TEAM_NAME} ${ATC_EXTERNAL_URL}"})
 
 	// Verify
 	assert.Equal(t, "foo bar 1 2 3 4 5 6", testGerritLastReviewInput.Message)
-
 }
+
 func TestOutMessageFile(t *testing.T) {
 	err := ioutil.WriteFile(
 		filepath.Join(testTempDir, "message.txt"),
