@@ -1,9 +1,0 @@
-language: go
-
-go:
-  - 1.8
-
-# Skip install to make sure vendoring is working
-install: true
-
-script: go test -v ./internal/resource ./gerrit
