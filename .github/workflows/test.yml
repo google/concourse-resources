@@ -11,6 +11,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Install deps
-      run: go get -d
+      run: go get -d ./...
     - name: Test
       run: go test -v ./internal/resource ./gerrit
